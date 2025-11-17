@@ -13,7 +13,7 @@ import { CardContent } from '@/shared/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/auth-store';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
-import { mockUsers } from '@/lib/mock-data';
+import { authService } from '@/services';
 
 export function LoginForm() {
   const router = useRouter();
@@ -33,37 +33,34 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const response = await authService.login({
+        documentNumber: data.cedula,
+        password: data.password,
+      });
 
-    // Check credentials against mock data
-    const user = mockUsers.find((u) => u.documentNumber === data.cedula);
+      // Login successful
+      login(response.user);
+      toast({
+        title: 'Bienvenido',
+        description: `Has iniciado sesión como ${response.user.fullName}`,
+      });
 
-    if (!user || data.password !== 'password123') {
+      // Redirect based on role
+      if (response.user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/user/home');
+      }
+    } catch (error: any) {
       toast({
         title: 'Error de autenticación',
-        description: 'Cédula o contraseña incorrecta',
+        description: error.message || 'Cédula o contraseña incorrecta',
         variant: 'destructive',
       });
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // Login successful
-    login(user);
-    toast({
-      title: 'Bienvenido',
-      description: `Has iniciado sesión como ${user.fullName}`,
-    });
-
-    // Redirect based on role
-    if (user.role === 'admin') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push('/user/home');
-    }
-
-    setIsLoading(false);
   };
 
   return (

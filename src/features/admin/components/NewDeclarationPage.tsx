@@ -1,11 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { declarationSchema, type DeclarationFormData } from '@/lib/validations';
+import { declarationService } from '@/services';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface NewDeclarationPageProps {
   customerId: string;
@@ -13,11 +20,42 @@ interface NewDeclarationPageProps {
 
 export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Lógica para crear declaración
-    router.push(`/admin/customers/${customerId}/declarations`);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<DeclarationFormData>({
+    // @ts-ignore
+    resolver: zodResolver(declarationSchema),
+  });
+
+  const onSubmit = async (data: DeclarationFormData) => {
+    try {
+      setIsLoading(true);
+      await declarationService.create({
+        userId: customerId,
+        taxableYear: data.taxableYear,
+        description: data.description || '',
+      });
+
+      toast({
+        title: 'Declaración creada',
+        description: 'La declaración ha sido creada exitosamente',
+      });
+
+      router.push(`/admin/customers/${customerId}/declarations`);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Error al crear la declaración',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -34,21 +72,48 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
           <CardTitle>Información de la Declaración</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="year">Año</Label>
-              <Input id="year" type="number" placeholder="2024" />
+              <Label htmlFor="taxableYear">Año</Label>
+              <Input
+                id="taxableYear"
+                type="number"
+                placeholder="2024"
+                {...register('taxableYear', { valueAsNumber: true })}
+                disabled={isLoading}
+              />
+              {errors.taxableYear && (
+                <p className="text-sm text-destructive">{errors.taxableYear.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
-              <Textarea id="description" placeholder="Descripción de la declaración" />
+              <Textarea
+                id="description"
+                placeholder="Descripción de la declaración"
+                {...register('description')}
+                disabled={isLoading}
+              />
+              {errors.description && (
+                <p className="text-sm text-destructive">{errors.description.message}</p>
+              )}
             </div>
             <div className="flex gap-4">
-              <Button type="submit">Crear Declaración</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creando...
+                  </>
+                ) : (
+                  'Crear Declaración'
+                )}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
+                disabled={isLoading}
               >
                 Cancelar
               </Button>
@@ -59,4 +124,3 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
     </div>
   );
 }
-

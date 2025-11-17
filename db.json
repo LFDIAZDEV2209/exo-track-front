@@ -1,0 +1,258 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "documentNumber": "1234567890",
+      "fullName": "Carlos Administrador",
+      "email": "admin@exotrack.com",
+      "phoneNumber": "3001234567",
+      "passwordHash": "$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+      "role": "admin",
+      "isActive": true,
+      "createdAt": "2023-01-01T00:00:00.000Z",
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "documentNumber": "1098765432",
+      "fullName": "María García López",
+      "email": "maria@email.com",
+      "phoneNumber": "3107654321",
+      "passwordHash": "$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+      "role": "cliente",
+      "isActive": true,
+      "createdAt": "2023-01-15T00:00:00.000Z",
+      "updatedAt": "2023-01-15T00:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "documentNumber": "1029384756",
+      "fullName": "Juan Pérez Rodríguez",
+      "email": "juan@email.com",
+      "phoneNumber": "3159876543",
+      "passwordHash": "$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+      "role": "cliente",
+      "isActive": true,
+      "createdAt": "2023-03-20T00:00:00.000Z",
+      "updatedAt": "2023-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "4",
+      "documentNumber": "1234098765",
+      "fullName": "Ana Martínez Silva",
+      "email": "ana@email.com",
+      "phoneNumber": "3201239876",
+      "passwordHash": "$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+      "role": "cliente",
+      "isActive": true,
+      "createdAt": "2023-05-10T00:00:00.000Z",
+      "updatedAt": "2023-05-10T00:00:00.000Z"
+    },
+    {
+      "id": "5",
+      "documentNumber": "1098234567",
+      "fullName": "Carlos Ramírez Gómez",
+      "email": "carlos@email.com",
+      "phoneNumber": "3182345678",
+      "passwordHash": "$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+      "role": "cliente",
+      "isActive": true,
+      "createdAt": "2023-08-22T00:00:00.000Z",
+      "updatedAt": "2023-08-22T00:00:00.000Z"
+    },
+    {
+      "id": "6",
+      "documentNumber": "1029876543",
+      "fullName": "Laura Sánchez Torres",
+      "email": "laura@email.com",
+      "phoneNumber": "3124567890",
+      "passwordHash": "$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+      "role": "cliente",
+      "isActive": true,
+      "createdAt": "2024-02-14T00:00:00.000Z",
+      "updatedAt": "2024-02-14T00:00:00.000Z"
+    }
+  ],
+  "declarations": [
+    {
+      "id": "d1",
+      "userId": "2",
+      "userFullName": "María García López",
+      "taxableYear": 2024,
+      "status": "borrador",
+      "description": "Pendiente de revisar ingresos adicionales",
+      "filePath": null,
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "d2",
+      "userId": "2",
+      "userFullName": "María García López",
+      "taxableYear": 2023,
+      "status": "finalizada",
+      "description": "Declaración completa y presentada",
+      "filePath": "/files/d2.pdf",
+      "createdAt": "2024-03-15T00:00:00.000Z",
+      "updatedAt": "2024-03-15T00:00:00.000Z"
+    },
+    {
+      "id": "d3",
+      "userId": "2",
+      "userFullName": "María García López",
+      "taxableYear": 2022,
+      "status": "finalizada",
+      "description": "",
+      "filePath": "/files/d3.pdf",
+      "createdAt": "2023-03-10T00:00:00.000Z",
+      "updatedAt": "2023-03-10T00:00:00.000Z"
+    },
+    {
+      "id": "d4",
+      "userId": "3",
+      "userFullName": "Juan Pérez Rodríguez",
+      "taxableYear": 2024,
+      "status": "borrador",
+      "description": "Falta información de patrimonio inmobiliario",
+      "filePath": null,
+      "createdAt": "2024-10-20T00:00:00.000Z",
+      "updatedAt": "2024-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "d5",
+      "userId": "3",
+      "userFullName": "Juan Pérez Rodríguez",
+      "taxableYear": 2023,
+      "status": "finalizada",
+      "description": "",
+      "filePath": "/files/d5.pdf",
+      "createdAt": "2024-04-05T00:00:00.000Z",
+      "updatedAt": "2024-04-05T00:00:00.000Z"
+    },
+    {
+      "userId": "2",
+      "taxableYear": 2025,
+      "description": "",
+      "userFullName": "María García López",
+      "status": "borrador",
+      "filePath": null,
+      "createdAt": "2025-11-17T04:17:24.642Z",
+      "updatedAt": "2025-11-17T04:17:24.642Z",
+      "id": "_gJyOZI"
+    }
+  ],
+  "income": [
+    {
+      "id": "i1",
+      "declarationId": "d1",
+      "concept": "Salario empresa ABC S.A.S.",
+      "amount": 96000000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "i2",
+      "declarationId": "d1",
+      "concept": "Consultoría independiente",
+      "amount": 24000000,
+      "source": "manual",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "i3",
+      "declarationId": "d1",
+      "concept": "Dividendos acciones",
+      "amount": 8500000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "i4",
+      "declarationId": "d1",
+      "concept": "Rendimientos financieros CDT",
+      "amount": 6200000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    }
+  ],
+  "assets": [
+    {
+      "id": "p1",
+      "declarationId": "d1",
+      "concept": "Apartamento en Bogotá - Chapinero",
+      "amount": 350000000,
+      "source": "manual",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "p2",
+      "declarationId": "d1",
+      "concept": "Vehículo Mazda CX-5 2020",
+      "amount": 85000000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "p3",
+      "declarationId": "d1",
+      "concept": "Inversiones en CDT Bancolombia",
+      "amount": 120000000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "p4",
+      "declarationId": "d1",
+      "concept": "Cuenta de ahorros Banco de Bogotá",
+      "amount": 45000000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "p5",
+      "declarationId": "d1",
+      "concept": "Acciones en la Bolsa de Valores",
+      "amount": 65000000,
+      "source": "manual",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    }
+  ],
+  "liabilities": [
+    {
+      "id": "de1",
+      "declarationId": "d1",
+      "concept": "Crédito hipotecario apartamento - Banco Davivienda",
+      "amount": 180000000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "de2",
+      "declarationId": "d1",
+      "concept": "Crédito vehículo - Banco Colpatria",
+      "amount": 35000000,
+      "source": "exogeno",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "de3",
+      "declarationId": "d1",
+      "concept": "Saldo tarjeta de crédito - BBVA",
+      "amount": 8500000,
+      "source": "manual",
+      "createdAt": "2024-11-01T00:00:00.000Z",
+      "updatedAt": "2024-11-01T00:00:00.000Z"
+    }
+  ]
+}

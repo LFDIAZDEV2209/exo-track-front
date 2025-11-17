@@ -11,7 +11,13 @@ export function LoginCredentials() {
           <strong>Admin:</strong> 1234567890 / password123
         </p>
         <p>
-          <strong>Cliente:</strong> 1098765432 / password123
+          <strong>Cliente 1:</strong> 1098765432 / password123
+        </p>
+        <p>
+          <strong>Cliente 2:</strong> 1029384756 / password123
+        </p>
+        <p className="text-xs text-muted-foreground/70 mt-2">
+          Todos los usuarios usan la contraseña: password123
         </p>
       </div>
     </div>

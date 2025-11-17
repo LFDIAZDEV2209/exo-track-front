@@ -7,6 +7,7 @@ export interface User {
   fullName: string;
   email: string;
   phoneNumber: string;
+  passwordHash?: string; // Optional in frontend, required in backend
   role: UserRole;
   isActive?: boolean;
   createdAt?: Date;

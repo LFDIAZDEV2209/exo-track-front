@@ -8,4 +8,3 @@ export default async function Page({ params }: PageProps) {
   const { customerId } = await params;
   return <DeclarationsPage customerId={customerId} />;
 }
-
