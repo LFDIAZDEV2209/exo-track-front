@@ -7,10 +7,24 @@ interface StatCardProps {
   value: string | number;
   icon: LucideIcon;
   trend?: string;
+  trendColor?: 'green' | 'red' | 'default';
   colorClass?: string;
 }
 
-export function StatCard({ title, value, icon: Icon, trend, colorClass = 'bg-primary' }: StatCardProps) {
+export function StatCard({ 
+  title, 
+  value, 
+  icon: Icon, 
+  trend, 
+  trendColor = 'default',
+  colorClass = 'bg-primary' 
+}: StatCardProps) {
+  const trendColorClass = {
+    green: 'text-green-600',
+    red: 'text-red-600',
+    default: 'text-muted-foreground',
+  }[trendColor];
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -19,7 +33,7 @@ export function StatCard({ title, value, icon: Icon, trend, colorClass = 'bg-pri
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold">{value}</p>
             {trend && (
-              <p className="text-sm font-medium text-muted-foreground">
+              <p className={cn('text-sm font-medium', trendColorClass)}>
                 {trend}
               </p>
             )}

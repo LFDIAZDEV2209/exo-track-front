@@ -1,18 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
-import { Textarea } from '@/shared/ui/textarea';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { declarationSchema, type DeclarationFormData } from '@/lib/validations';
-import { declarationService } from '@/services';
+import { declarationService, clientService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { FileUpload } from '@/shared/layout/file-upload';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 
 interface NewDeclarationPageProps {
   customerId: string;
@@ -22,15 +28,40 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [client, setClient] = useState<any>(null);
+  const [existingYears, setExistingYears] = useState<number[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [clientData, declarations] = await Promise.all([
+          clientService.getById(customerId),
+          declarationService.getByUserId(customerId),
+        ]);
+        setClient(clientData);
+        const years = declarations.map((d: any) => d.taxableYear);
+        setExistingYears(years);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+    fetchData();
+  }, [customerId]);
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<DeclarationFormData>({
     // @ts-ignore
     resolver: zodResolver(declarationSchema),
   });
+
+  const currentYear = new Date().getFullYear();
+  const availableYears = Array.from({ length: 10 }, (_, i) => currentYear - i).filter(
+    (year) => !existingYears.includes(year)
+  );
 
   const onSubmit = async (data: DeclarationFormData) => {
     try {
@@ -60,11 +91,20 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Nueva Declaración</h1>
-        <p className="text-muted-foreground">
-          Crea una nueva declaración de renta
-        </p>
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold tracking-tight">Nueva Declaración</h1>
+          <p className="text-muted-foreground">
+            Crea una declaración de renta para {client?.fullName || 'el cliente'}
+          </p>
+        </div>
       </div>
 
       <Card>
@@ -72,41 +112,60 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
           <CardTitle>Información de la Declaración</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <p className="text-sm text-muted-foreground mb-6">
+            Selecciona el año y carga el archivo del exógeno DIAN
+          </p>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="taxableYear">Año</Label>
-              <Input
-                id="taxableYear"
-                type="number"
-                placeholder="2024"
-                {...register('taxableYear', { valueAsNumber: true })}
-                disabled={isLoading}
+              <Label htmlFor="taxableYear">Año de la Declaración</Label>
+              <Controller
+                name="taxableYear"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString()}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="taxableYear" className="w-full">
+                      <SelectValue placeholder="Selecciona un año" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableYears.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
               {errors.taxableYear && (
                 <p className="text-sm text-destructive">{errors.taxableYear.message}</p>
               )}
+              <p className="text-xs text-muted-foreground">
+                Los años con declaraciones existentes no se mostrarán
+              </p>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                placeholder="Descripción de la declaración"
-                {...register('description')}
+              <Label>Archivo del Exógeno DIAN</Label>
+              <FileUpload
+                onFileSelect={setSelectedFile}
+                accept=".xlsx,.xls"
                 disabled={isLoading}
               />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description.message}</p>
-              )}
             </div>
+
             <div className="flex gap-4">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creando...
+                    Procesando...
                   </>
                 ) : (
-                  'Crear Declaración'
+                  'Procesar y Crear'
                 )}
               </Button>
               <Button
