@@ -15,12 +15,12 @@ export default function AdminLayout({
   const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated || user?.rol !== 'admin') {
+    if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.rol !== 'admin') {
+  if (!isAuthenticated || user?.role !== 'admin') {
     return null;
   }
 

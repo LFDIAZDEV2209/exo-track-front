@@ -2,15 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, FileText, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/ui-store';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Clientes', href: '/admin/customers', icon: Users },
-  { name: 'Declaraciones', href: '/admin/declaraciones', icon: FileText },
-  { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
 ];
 
 export function AdminSidebar() {

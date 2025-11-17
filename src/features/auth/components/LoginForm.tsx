@@ -37,7 +37,7 @@ export function LoginForm() {
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     // Check credentials against mock data
-    const user = mockUsers.find((u) => u.cedula === data.cedula);
+    const user = mockUsers.find((u) => u.documentNumber === data.cedula);
 
     if (!user || data.password !== 'password123') {
       toast({
@@ -53,11 +53,11 @@ export function LoginForm() {
     login(user);
     toast({
       title: 'Bienvenido',
-      description: `Has iniciado sesión como ${user.nombreCompleto}`,
+      description: `Has iniciado sesión como ${user.fullName}`,
     });
 
     // Redirect based on role
-    if (user.rol === 'admin') {
+    if (user.role === 'admin') {
       router.push('/admin/dashboard');
     } else {
       router.push('/user/home');

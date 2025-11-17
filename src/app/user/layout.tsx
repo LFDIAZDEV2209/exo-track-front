@@ -15,12 +15,12 @@ export default function ClienteLayout({
   const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated || user?.rol !== 'cliente') {
+    if (!isAuthenticated || user?.role !== 'cliente') {
       router.push('/login');
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.rol !== 'cliente') {
+  if (!isAuthenticated || user?.role !== 'cliente') {
     return null;
   }
 

@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, FileText, User } from 'lucide-react';
+import { Home, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/ui-store';
 
 const navigation = [
   { name: 'Inicio', href: '/user/home', icon: Home },
-  { name: 'Mis Declaraciones', href: '/user/user-declarations', icon: FileText },
-  { name: 'Perfil', href: '/user/perfil', icon: User },
+  { name: 'Mis Declaraciones', href: '/user/declarations', icon: FileText },
 ];
 
 export function ClienteSidebar() {
