@@ -15,6 +15,15 @@ export interface UsersStats {
   averageDeclarationsPerUser: number;
 }
 
+// DTO para actualizar usuario (solo los campos que el backend acepta)
+export interface UpdateUserDto {
+  fullName?: string;
+  documentNumber?: string;
+  email?: string;
+  phoneNumber?: string;
+  password?: string;
+}
+
 export const userService = {
   /**
    * Obtener todos los usuarios con paginación
@@ -60,15 +69,24 @@ export const userService = {
 
   /**
    * Actualizar un usuario (usa PUT según backend)
+   * Solo envía los campos que el backend acepta según el DTO
    * @param id - ID del usuario
-   * @param user - Datos a actualizar
+   * @param userData - Datos a actualizar (solo campos permitidos)
    * @returns Usuario actualizado
    */
-  async update(id: string, user: Partial<User>): Promise<User> {
-    return apiClient.put<User>(API_ENDPOINTS.users.update(id), {
-      ...user,
-      updatedAt: new Date().toISOString(),
-    });
+  async update(id: string, userData: UpdateUserDto): Promise<User> {
+    // Filtrar solo los campos que el backend acepta
+    const payload: UpdateUserDto = {};
+    
+    if (userData.fullName !== undefined) payload.fullName = userData.fullName;
+    if (userData.documentNumber !== undefined) payload.documentNumber = userData.documentNumber;
+    if (userData.email !== undefined) payload.email = userData.email;
+    if (userData.phoneNumber !== undefined) payload.phoneNumber = userData.phoneNumber;
+    if (userData.password !== undefined && userData.password.trim() !== '') {
+      payload.password = userData.password;
+    }
+    
+    return apiClient.put<User>(API_ENDPOINTS.users.update(id), payload);
   },
 
   /**

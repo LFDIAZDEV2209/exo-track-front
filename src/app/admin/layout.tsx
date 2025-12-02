@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/shared/layout/admin-sidebar';
 import { Header } from '@/shared/layout/header';
 import { useAuthStore } from '@/stores/auth-store';
+import { UserRole } from '@/types/user-role.type';
+import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -12,15 +14,49 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, token, initializeAuth, _hasHydrated } = useAuthStore();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') {
-      router.push('/login');
+    // Esperar a que el store se haya rehidratado
+    if (!_hasHydrated) {
+      return;
     }
-  }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+    const checkAuth = async () => {
+      // Si hay token pero no hay usuario, intentar restaurar la sesión
+      if (token && !user) {
+        try {
+          await initializeAuth();
+        } catch (error) {
+          console.error('Failed to restore session:', error);
+        }
+      }
+      
+      // Verificar autenticación y rol después de restaurar
+      const currentState = useAuthStore.getState();
+      if (!currentState.isAuthenticated || currentState.user?.role !== UserRole.ADMIN) {
+        router.push('/login');
+      }
+      
+      setIsChecking(false);
+    };
+
+    checkAuth();
+  }, [_hasHydrated, token, user, router, initializeAuth]);
+
+  // Mostrar loader mientras se rehidrata o verifica
+  if (!_hasHydrated || isChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Verificar nuevamente después de la rehidratación
+  const currentState = useAuthStore.getState();
+  if (!currentState.isAuthenticated || currentState.user?.role !== UserRole.ADMIN) {
     return null;
   }
 
