@@ -2,6 +2,11 @@ import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Income } from '@/types';
 
+export interface PaginationDto {
+  limit?: number;
+  offset?: number;
+}
+
 export interface CreateIncomeRequest {
   declarationId: string;
   concept: string;
@@ -10,18 +15,38 @@ export interface CreateIncomeRequest {
 }
 
 export const incomeService = {
-  async getAll(): Promise<Income[]> {
-    return apiClient.get<Income[]>(API_ENDPOINTS.income.list);
+  /**
+   * Obtener todos los ingresos con paginación
+   * @param paginationDto - Parámetros de paginación (limit, offset)
+   * @param declarationId - ID de la declaración (opcional) para filtrar
+   * @returns Array de ingresos
+   */
+  async findAll(
+    paginationDto?: PaginationDto,
+    declarationId?: string
+  ): Promise<Income[]> {
+    return apiClient.get<Income[]>(
+      API_ENDPOINTS.income.findAll({
+        ...paginationDto,
+        declarationId,
+      })
+    );
   },
 
-  async getById(id: string): Promise<Income> {
-    return apiClient.get<Income>(API_ENDPOINTS.income.get(id));
+  /**
+   * Obtener un ingreso por término (ID, etc.)
+   * @param term - Término de búsqueda
+   * @returns Ingreso encontrado
+   */
+  async findOne(term: string): Promise<Income> {
+    return apiClient.get<Income>(API_ENDPOINTS.income.findOne(term));
   },
 
-  async getByDeclaration(declarationId: string): Promise<Income[]> {
-    return apiClient.get<Income[]>(API_ENDPOINTS.income.getByDeclaration(declarationId));
-  },
-
+  /**
+   * Crear un nuevo ingreso
+   * @param data - Datos del ingreso
+   * @returns Ingreso creado
+   */
   async create(data: CreateIncomeRequest): Promise<Income> {
     return apiClient.post<Income>(API_ENDPOINTS.income.create, {
       ...data,
@@ -30,15 +55,25 @@ export const incomeService = {
     });
   },
 
+  /**
+   * Actualizar un ingreso (usa PUT según backend)
+   * @param id - ID del ingreso
+   * @param data - Datos a actualizar
+   * @returns Ingreso actualizado
+   */
   async update(id: string, data: Partial<CreateIncomeRequest>): Promise<Income> {
-    return apiClient.patch<Income>(API_ENDPOINTS.income.update(id), {
+    return apiClient.put<Income>(API_ENDPOINTS.income.update(id), {
       ...data,
       updatedAt: new Date().toISOString(),
     });
   },
 
-  async delete(id: string): Promise<void> {
-    return apiClient.delete<void>(API_ENDPOINTS.income.delete(id));
+  /**
+   * Eliminar un ingreso
+   * @param id - ID del ingreso
+   */
+  async remove(id: string): Promise<void> {
+    return apiClient.delete<void>(API_ENDPOINTS.income.remove(id));
   },
 };
 

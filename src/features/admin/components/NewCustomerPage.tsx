@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { clientSchema, type ClientFormData } from '@/lib/validations';
-import { clientService } from '@/services';
+import { authService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -30,12 +30,14 @@ export function NewCustomerPage() {
   const onSubmit = async (data: ClientFormData) => {
     try {
       setIsLoading(true);
-      await clientService.create({
+      // Usar authService.register para crear el usuario
+      await authService.register({
         fullName: data.fullName,
         documentNumber: data.documentNumber,
         email: data.email,
         phoneNumber: data.phoneNumber,
-        password: data.password || 'password123', // Default password for new clients
+        password: data.password || 'password123',
+        role: 'cliente',
       });
 
       toast({

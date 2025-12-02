@@ -27,10 +27,10 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
       try {
         setLoading(true);
         const [decl, incs, asts, liabs] = await Promise.all([
-          declarationService.getById(declarationId),
-          incomeService.getByDeclaration(declarationId),
-          assetService.getByDeclaration(declarationId),
-          liabilityService.getByDeclaration(declarationId),
+          declarationService.findOne(declarationId),
+          incomeService.findAll(undefined, declarationId),
+          assetService.findAll(undefined, declarationId),
+          liabilityService.findAll(undefined, declarationId),
         ]);
 
         setDeclaration(decl);

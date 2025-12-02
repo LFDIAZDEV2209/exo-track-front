@@ -2,6 +2,11 @@ import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Asset } from '@/types';
 
+export interface PaginationDto {
+  limit?: number;
+  offset?: number;
+}
+
 export interface CreateAssetRequest {
   declarationId: string;
   concept: string;
@@ -10,18 +15,38 @@ export interface CreateAssetRequest {
 }
 
 export const assetService = {
-  async getAll(): Promise<Asset[]> {
-    return apiClient.get<Asset[]>(API_ENDPOINTS.assets.list);
+  /**
+   * Obtener todos los activos con paginación
+   * @param paginationDto - Parámetros de paginación (limit, offset)
+   * @param declarationId - ID de la declaración (opcional) para filtrar
+   * @returns Array de activos
+   */
+  async findAll(
+    paginationDto?: PaginationDto,
+    declarationId?: string
+  ): Promise<Asset[]> {
+    return apiClient.get<Asset[]>(
+      API_ENDPOINTS.assets.findAll({
+        ...paginationDto,
+        declarationId,
+      })
+    );
   },
 
-  async getById(id: string): Promise<Asset> {
-    return apiClient.get<Asset>(API_ENDPOINTS.assets.get(id));
+  /**
+   * Obtener un activo por término (ID, etc.)
+   * @param term - Término de búsqueda
+   * @returns Activo encontrado
+   */
+  async findOne(term: string): Promise<Asset> {
+    return apiClient.get<Asset>(API_ENDPOINTS.assets.findOne(term));
   },
 
-  async getByDeclaration(declarationId: string): Promise<Asset[]> {
-    return apiClient.get<Asset[]>(API_ENDPOINTS.assets.getByDeclaration(declarationId));
-  },
-
+  /**
+   * Crear un nuevo activo
+   * @param data - Datos del activo
+   * @returns Activo creado
+   */
   async create(data: CreateAssetRequest): Promise<Asset> {
     return apiClient.post<Asset>(API_ENDPOINTS.assets.create, {
       ...data,
@@ -30,15 +55,25 @@ export const assetService = {
     });
   },
 
+  /**
+   * Actualizar un activo (usa PUT según backend)
+   * @param id - ID del activo
+   * @param data - Datos a actualizar
+   * @returns Activo actualizado
+   */
   async update(id: string, data: Partial<CreateAssetRequest>): Promise<Asset> {
-    return apiClient.patch<Asset>(API_ENDPOINTS.assets.update(id), {
+    return apiClient.put<Asset>(API_ENDPOINTS.assets.update(id), {
       ...data,
       updatedAt: new Date().toISOString(),
     });
   },
 
-  async delete(id: string): Promise<void> {
-    return apiClient.delete<void>(API_ENDPOINTS.assets.delete(id));
+  /**
+   * Eliminar un activo
+   * @param id - ID del activo
+   */
+  async remove(id: string): Promise<void> {
+    return apiClient.delete<void>(API_ENDPOINTS.assets.remove(id));
   },
 };
 

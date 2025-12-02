@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Textarea } from '@/shared/ui/textarea';
 import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { declarationService, incomeService, assetService, liabilityService, clientService } from '@/services';
+import { declarationService, incomeService, assetService, liabilityService, userService } from '@/services';
 import { formatCurrency } from '@/lib/utils';
 import { DataTable } from '@/shared/components/data-table';
 import { useToast } from '@/hooks/use-toast';
+import { DeclarationStatus } from '@/types';
 
 interface DeclarationDetailAdminPageProps {
   declarationId: string;
@@ -34,11 +35,11 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
       try {
         setLoading(true);
         const [decl, clientData, incs, asts, liabs] = await Promise.all([
-          declarationService.getById(declarationId),
-          clientService.getById(customerId),
-          incomeService.getByDeclaration(declarationId),
-          assetService.getByDeclaration(declarationId),
-          liabilityService.getByDeclaration(declarationId),
+          declarationService.findOne(declarationId),
+          userService.findOne(customerId),
+          incomeService.findAll(undefined, declarationId),
+          assetService.findAll(undefined, declarationId),
+          liabilityService.findAll(undefined, declarationId),
         ]);
 
         setDeclaration(decl);
@@ -60,9 +61,9 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
   const handleFinalize = async () => {
     try {
       await declarationService.update(declarationId, {
-        status: 'finalizada',
+        status: DeclarationStatus.COMPLETED,
       });
-      setDeclaration({ ...declaration, status: 'finalizada' });
+      setDeclaration({ ...declaration, status: DeclarationStatus.COMPLETED });
       toast({
         title: 'Declaración finalizada',
         description: 'La declaración ha sido finalizada exitosamente',
@@ -127,7 +128,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">
-            Declaración {declaration.taxableYear} - {client?.fullName || declaration.userFullName}
+            Declaración {declaration.taxableYear} - {client?.fullName || 'Cliente'}
           </h1>
           <p className="text-muted-foreground">
             Administra los datos de la declaración de renta

@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { declarationSchema, type DeclarationFormData } from '@/lib/validations';
-import { declarationService, clientService } from '@/services';
+import { declarationService, userService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { FileUpload } from '@/shared/layout/file-upload';
@@ -36,8 +36,8 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
     const fetchData = async () => {
       try {
         const [clientData, declarations] = await Promise.all([
-          clientService.getById(customerId),
-          declarationService.getByUserId(customerId),
+          userService.findOne(customerId),
+          declarationService.findAll(undefined, customerId),
         ]);
         setClient(clientData);
         const years = declarations.map((d: any) => d.taxableYear);

@@ -34,13 +34,17 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
+      console.log('[LoginForm] Attempting login with:', { documentNumber: data.cedula });
+      
       const response = await authService.login({
         documentNumber: data.cedula,
         password: data.password,
       });
 
-      // Login successful
-      login(response.user);
+      console.log('[LoginForm] Login successful:', response);
+
+      // Login successful - save user and token
+      login(response.user, response.token);
       toast({
         title: 'Bienvenido',
         description: `Has iniciado sesión como ${response.user.fullName}`,
@@ -53,9 +57,22 @@ export function LoginForm() {
         router.push('/user/home');
       }
     } catch (error: any) {
+      console.error('[LoginForm] Login error:', error);
+      console.error('[LoginForm] Error details:', {
+        message: error?.message,
+        status: error?.status,
+        errors: error?.errors,
+        fullError: error,
+      });
+
+      const errorMessage = 
+        error?.message || 
+        error?.errors?.message?.[0] ||
+        'Cédula o contraseña incorrecta';
+
       toast({
         title: 'Error de autenticación',
-        description: error.message || 'Cédula o contraseña incorrecta',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

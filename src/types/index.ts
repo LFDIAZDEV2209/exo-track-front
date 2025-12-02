@@ -1,77 +1,15 @@
-// User types
-export type UserRole = 'admin' | 'cliente';
+export type { User } from "./user.type";
 
-export interface User {
-  id: string;
-  documentNumber: string;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  passwordHash?: string; // Optional in frontend, required in backend
-  role: UserRole;
-  isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+export { UserRole } from "./user-role.type";
 
-// Client types (for admin view)
-export interface Client {
-  id: string;
-  documentNumber: string;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  totalDeclarations: number;
-  createdAt: Date;
-}
+export type { Declaration } from "./declaration.type";
 
-// Declaration types
-export type DeclarationStatus = 'borrador' | 'finalizada';
+export { DeclarationStatus } from "./declaration-status.type";
 
-export type DataSource = 'exogeno' | 'manual';
+export type{ Liability } from "./liability.type";
 
-export interface Declaration {
-  id: string;
-  userId: string;
-  userFullName: string;
-  taxableYear: number;
-  status: DeclarationStatus;
-  description: string;
-  filePath?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export { DataSource } from "./data-source.type";
 
-// Income types
-export interface Income {
-  id: string;
-  declarationId: string;
-  concept: string;
-  amount: number;
-  source: DataSource;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { Income } from "./income.type";
 
-// Asset types
-export interface Asset {
-  id: string;
-  declarationId: string;
-  concept: string;
-  amount: number;
-  source: DataSource;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Liability types
-export interface Liability {
-  id: string;
-  declarationId: string;
-  concept: string;
-  amount: number;
-  source: DataSource;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
+export type { Asset } from "./asset.type";

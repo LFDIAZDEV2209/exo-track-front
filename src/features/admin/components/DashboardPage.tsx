@@ -5,7 +5,7 @@ import { Users, FileText, AlertCircle, CheckCircle2, FileText as FileTextIcon, T
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { StatCard } from '@/shared/layout/stat-card';
 import { Badge } from '@/shared/ui/badge';
-import { clientService, declarationService } from '@/services';
+import { userService, declarationService } from '@/services';
 import { useAuthStore } from '@/stores/auth-store';
 import { formatRelativeDate } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
@@ -29,48 +29,36 @@ export function DashboardPage() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const [clients, declarations] = await Promise.all([
-          clientService.getAll(),
-          declarationService.getAll(),
+        
+        // Usar endpoints dedicados para estadísticas
+        const [usersStats, declarationsStats, recentActivityData] = await Promise.all([
+          userService.getStats(),
+          declarationService.getStats(),
+          declarationService.getRecentActivity(),
         ]);
 
-        const pending = declarations.filter((d) => d.status === 'borrador').length;
-        const now = new Date();
-        const thisMonth = declarations.filter((d) => {
-          const date = new Date(d.createdAt);
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-        });
-        const completedThisMonth = thisMonth.filter((d) => d.status === 'finalizada').length;
-        const clientsThisMonth = clients.filter((c) => {
-          const date = new Date(c.createdAt);
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-        }).length;
-
-        const completed = declarations.filter((d) => d.status === 'finalizada').length;
-        const completionRate = declarations.length > 0 
-          ? Math.round((completed / declarations.length) * 100) 
-          : 0;
-        const averagePerClient = clients.length > 0 
-          ? (declarations.length / clients.length).toFixed(1)
-          : '0.0';
-        const activeClients = clients.length;
-
-        // Ordenar declaraciones por fecha más reciente y tomar las 5 primeras
-        const sortedDeclarations = [...declarations]
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-          .slice(0, 5);
-
         setStats({
-          totalClients: clients.length,
-          totalDeclarations: declarations.length,
-          pendingDeclarations: pending,
-          completedThisMonth,
-          clientsThisMonth,
-          completionRate,
-          averagePerClient: parseFloat(averagePerClient),
-          activeClients,
+          totalClients: usersStats.totalUsers,
+          totalDeclarations: declarationsStats.totalDeclarations,
+          pendingDeclarations: declarationsStats.totalPending,
+          completedThisMonth: declarationsStats.completedThisMonth,
+          clientsThisMonth: 0, // No disponible en el endpoint actual
+          completionRate: declarationsStats.completionRate,
+          averagePerClient: usersStats.averageDeclarationsPerUser,
+          activeClients: usersStats.totalActiveUsers,
         });
-        setRecentActivity(sortedDeclarations);
+
+        // Mapear la actividad reciente al formato esperado
+        const mappedActivity = recentActivityData.map((item) => ({
+          id: item.id,
+          taxableYear: item.taxableYear,
+          status: item.status,
+          description: item.description,
+          updatedAt: item.updatedAt,
+          userFullName: item.user.fullName,
+        }));
+
+        setRecentActivity(mappedActivity);
       } catch (error) {
         console.error('Error loading dashboard stats:', error);
       } finally {
@@ -149,10 +137,10 @@ export function DashboardPage() {
                     </p>
                   </div>
                   <Badge
-                    variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
-                    className={declaration.status === 'borrador' ? 'bg-orange-100 text-orange-800' : ''}
+                    variant={declaration.status === 'completed' ? 'default' : 'secondary'}
+                    className={declaration.status === 'pending' ? 'bg-orange-100 text-orange-800' : ''}
                   >
-                    {declaration.status === 'finalizada' ? 'Finalizada' : 'Borrador'}
+                    {declaration.status === 'completed' ? 'Finalizada' : 'Pendiente'}
                   </Badge>
                   <p className="text-sm text-muted-foreground">
                     {formatRelativeDate(declaration.updatedAt)}
@@ -175,7 +163,7 @@ export function DashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Promedio por cliente</p>
-              <p className="text-2xl font-bold">{stats.averagePerClient} declaraciones</p>
+              <p className="text-2xl font-bold">{stats.averagePerClient.toFixed(1)} declaraciones</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Tasa de finalización</p>

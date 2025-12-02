@@ -1,16 +1,34 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
-import type { Client, User } from '@/types';
+import type { User } from '@/types';
+import { userService } from './user.service';
 import { declarationService } from './declaration.service';
 
+// Client is essentially a User with role 'cliente' plus totalDeclarations
+export interface Client {
+  id: string;
+  documentNumber: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  totalDeclarations: number;
+  createdAt: Date;
+}
+
 export const clientService = {
-  async getAll(): Promise<Client[]> {
-    const users = await apiClient.get<User[]>(API_ENDPOINTS.clients.list);
+  /**
+   * Obtener todos los clientes (usuarios con role 'cliente')
+   * @param paginationDto - Parámetros de paginación opcionales
+   * @returns Array de clientes
+   */
+  async getAll(paginationDto?: { limit?: number; offset?: number }): Promise<Client[]> {
+    // Get all users and filter by role 'cliente'
+    const clients = await userService.findAll(paginationDto);
     
     // Transform users to clients and add totalDeclarations
-    const clients: Client[] = await Promise.all(
-      users.map(async (user) => {
-        const declarations = await declarationService.getByUserId(user.id);
+    const clientsWithDeclarations: Client[] = await Promise.all(
+      clients.map(async (user) => {
+        const declarations = await declarationService.findAll(undefined, user.id);
         return {
           id: user.id,
           documentNumber: user.documentNumber,
@@ -23,12 +41,17 @@ export const clientService = {
       })
     );
 
-    return clients;
+    return clientsWithDeclarations;
   },
 
+  /**
+   * Obtener un cliente por ID
+   * @param id - ID del cliente
+   * @returns Cliente encontrado
+   */
   async getById(id: string): Promise<Client> {
-    const user = await apiClient.get<User>(API_ENDPOINTS.clients.get(id));
-    const declarations = await declarationService.getByUserId(id);
+    const user = await userService.findOne(id);
+    const declarations = await declarationService.findAll(undefined, id);
 
     return {
       id: user.id,
@@ -41,22 +64,24 @@ export const clientService = {
     };
   },
 
+  /**
+   * Crear un nuevo cliente (usuario con role 'cliente')
+   * @param client - Datos del cliente
+   * @returns Cliente creado
+   */
   async create(client: Omit<Client, 'id' | 'totalDeclarations' | 'createdAt'> & { password?: string }): Promise<Client> {
-    // In real backend, password would be hashed server-side
-    // For json-server demo, we'll use a simple hash placeholder
-    const passwordHash = client.password 
-      ? '$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKqKq' 
-      : '$2a$10$rOzJqKqKqKqKqKqKqKqKqOqKqKqKqKqKqKqKqKqKqKqKqKqKqKq';
-
+    // Use auth/register endpoint to create user with role 'cliente'
+    // Note: The backend should handle password hashing
     const { password, ...clientData } = client;
     
-    const user = await apiClient.post<User>(API_ENDPOINTS.clients.create, {
+    // Register new user through auth/register endpoint
+    const { authService } = await import('./auth.service');
+    const { API_ENDPOINTS } = await import('@/lib/api/config');
+    
+    const user = await apiClient.post<User>(API_ENDPOINTS.auth.register, {
       ...clientData,
-      passwordHash,
+      password: password || 'password123', // Default password if not provided
       role: 'cliente',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     });
 
     return {
@@ -70,13 +95,18 @@ export const clientService = {
     };
   },
 
+  /**
+   * Actualizar un cliente
+   * @param id - ID del cliente
+   * @param client - Datos a actualizar
+   * @returns Cliente actualizado
+   */
   async update(id: string, client: Partial<Client>): Promise<Client> {
-    const user = await apiClient.patch<User>(API_ENDPOINTS.clients.update(id), {
+    const user = await userService.update(id, {
       ...client,
-      updatedAt: new Date().toISOString(),
-    });
+    } as Partial<User>);
 
-    const declarations = await declarationService.getByUserId(id);
+    const declarations = await declarationService.findAll(undefined, id);
 
     return {
       id: user.id,
@@ -89,8 +119,12 @@ export const clientService = {
     };
   },
 
+  /**
+   * Eliminar un cliente
+   * @param id - ID del cliente
+   */
   async delete(id: string): Promise<void> {
-    return apiClient.delete<void>(API_ENDPOINTS.clients.delete(id));
+    return userService.remove(id);
   },
 };
 

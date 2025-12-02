@@ -8,63 +8,67 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/shared/ui/input';
 import { Badge } from '@/shared/ui/badge';
 import Link from 'next/link';
-import { clientService, declarationService } from '@/services';
+import { userService, declarationService } from '@/services';
 
 export function CustomersPage() {
   const [loading, setLoading] = useState(true);
-  const [clients, setClients] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [clientsWithActivity, setClientsWithActivity] = useState<any[]>([]);
+  const [usersWithActivity, setUsersWithActivity] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchUsers = async () => {
       try {
         setLoading(true);
-        const data = await clientService.getAll();
-        const declarations = await declarationService.getAll();
+        // Usar directamente el endpoint de users (devuelve array desde userService)
+        const usersData = await userService.findAll();
         
-        // Agregar última actividad a cada cliente
-        const clientsWithLastActivity = data.map((client: any) => {
-          const clientDeclarations = declarations.filter((d: any) => d.userId === client.id);
-          const lastDeclaration = clientDeclarations.sort(
+        // Obtener todas las declaraciones para calcular última actividad
+        const declarationsResponse = await declarationService.findAll();
+        const declarations = declarationsResponse?.data || declarationsResponse || [];
+        
+        // Agregar última actividad a cada usuario
+        const usersWithLastActivity = usersData.map((user: any) => {
+          const userDeclarations = declarations.filter((d: any) => d.userId === user.id);
+          const lastDeclaration = userDeclarations.sort(
             (a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
           )[0];
           
           return {
-            ...client,
-            lastActivity: lastDeclaration?.updatedAt || client.createdAt,
+            ...user,
+            lastActivity: lastDeclaration?.updatedAt || user.createdAt,
           };
         });
 
-        setClients(clientsWithLastActivity);
-        setClientsWithActivity(clientsWithLastActivity);
+        setUsers(usersWithLastActivity);
+        setUsersWithActivity(usersWithLastActivity);
       } catch (error) {
-        console.error('Error loading clients:', error);
+        console.error('Error loading users:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchClients();
+    fetchUsers();
   }, []);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setClientsWithActivity(clients);
+      setUsersWithActivity(users);
       return;
     }
 
-    const filtered = clients.filter((client) => {
+    const filtered = users.filter((user) => {
       const query = searchQuery.toLowerCase();
       return (
-        client.fullName.toLowerCase().includes(query) ||
-        client.documentNumber.includes(query) ||
-        client.email.toLowerCase().includes(query)
+        user.fullName.toLowerCase().includes(query) ||
+        user.documentNumber.includes(query) ||
+        user.email.toLowerCase().includes(query)
       );
     });
 
-    setClientsWithActivity(filtered);
-  }, [searchQuery, clients]);
+    setUsersWithActivity(filtered);
+  }, [searchQuery, users]);
 
   const formatDate = (date: string | Date) => {
     const d = typeof date === 'string' ? new Date(date) : date;
@@ -96,7 +100,7 @@ export function CustomersPage() {
         <CardHeader>
           <CardTitle>Lista de Clientes</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {clientsWithActivity.length} clientes registrados
+            {usersWithActivity.length} clientes registrados
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -114,7 +118,7 @@ export function CustomersPage() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : clientsWithActivity.length === 0 ? (
+          ) : usersWithActivity.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               No hay clientes registrados
             </p>
@@ -131,20 +135,20 @@ export function CustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clientsWithActivity.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">{client.fullName}</TableCell>
-                    <TableCell>{client.documentNumber}</TableCell>
-                    <TableCell>{client.email}</TableCell>
+                {usersWithActivity.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.fullName}</TableCell>
+                    <TableCell>{user.documentNumber}</TableCell>
+                    <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="default" className="bg-blue-100 text-blue-800">
-                        {client.totalDeclarations || 0}
+                        {user.totalDeclarations || 0}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatDate(client.lastActivity)}</TableCell>
+                    <TableCell>{formatDate(user.lastActivity)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Link href={`/admin/customers/${client.id}`}>
+                        <Link href={`/admin/customers/${user.id}`}>
                           <Button variant="ghost" size="icon">
                             <Eye className="h-4 w-4" />
                           </Button>

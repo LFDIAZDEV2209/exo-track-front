@@ -46,8 +46,8 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
             <TableCell className="font-medium">{item.concept}</TableCell>
             <TableCell>{formatCurrency(item.amount)}</TableCell>
             <TableCell>
-              <Badge variant={item.source === 'exogeno' ? 'default' : 'secondary'}>
-                {item.source === 'exogeno' ? 'Exógeno' : 'Manual'}
+              <Badge variant={item.source === DataSource.EXOGENO ? 'default' : 'secondary'}>
+                {item.source === DataSource.EXOGENO ? 'Exógeno' : 'Manual'}
               </Badge>
             </TableCell>
             {!readOnly && (

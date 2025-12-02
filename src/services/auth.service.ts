@@ -7,57 +7,72 @@ export interface LoginRequest {
   password: string;
 }
 
+// Respuesta real del backend en login
+interface BackendLoginResponse {
+  message: string;
+  id: string;
+  documentNumber: string;
+  fullName: string;
+  password?: string;
+  token: string;
+}
+
 export interface LoginResponse {
   user: User;
-  token?: string;
+  token: string;
 }
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    // For json-server, we'll simulate login by finding the user
-    // In real backend, this would be a POST to /auth/login
-    const users = await apiClient.get<User[]>(API_ENDPOINTS.users.list);
-    const user = users.find((u) => u.documentNumber === credentials.documentNumber);
+    try {
+      console.log('[AuthService] Login request:', { endpoint: API_ENDPOINTS.auth.login, credentials: { ...credentials, password: '***' } });
+      
+      // POST to /auth/login endpoint
+      const backendResponse = await apiClient.post<BackendLoginResponse>(API_ENDPOINTS.auth.login, credentials);
+      
+      console.log('[AuthService] Login response received:', backendResponse);
+      
+      // El backend solo devuelve id, fullName, documentNumber, password
+      // Necesitamos obtener el usuario completo usando el id
+      const { userService } = await import('./user.service');
+      const fullUser = await userService.findOne(backendResponse.id);
+      
+      console.log('[AuthService] Full user data fetched:', fullUser);
+      
+      // Save token to localStorage and apiClient
+      if (backendResponse.token) {
+        apiClient.setAuthToken(backendResponse.token);
+        console.log('[AuthService] Token saved to localStorage');
+      } else {
+        console.warn('[AuthService] No token in response');
+        throw new Error('No token received from server');
+      }
 
-    if (!user) {
-      throw {
-        message: 'Usuario no encontrado',
-        status: 404,
+      return {
+        user: fullUser,
+        token: backendResponse.token,
       };
+    } catch (error) {
+      console.error('[AuthService] Login error caught:', error);
+      throw error;
     }
-
-    // In real backend, password would be validated server-side with bcrypt
-    // For json-server demo, we accept password123 for all users
-    if (credentials.password !== 'password123') {
-      throw {
-        message: 'Contraseña incorrecta',
-        status: 401,
-      };
-    }
-
-    if (!user.isActive) {
-      throw {
-        message: 'Usuario inactivo',
-        status: 403,
-      };
-    }
-
-    // Remove passwordHash from response
-    const { passwordHash, ...userWithoutPassword } = user;
-
-    return {
-      user: userWithoutPassword as User,
-      token: 'mock-token',
-    };
   },
 
   async getCurrentUser(): Promise<User> {
-    return apiClient.get<User>(API_ENDPOINTS.auth.me);
+    // GET /auth/check-auth-status endpoint para verificar estado de autenticación y obtener usuario actual
+    return apiClient.get<User>(API_ENDPOINTS.auth.checkAuthStatus);
   },
 
   async logout(): Promise<void> {
-    // In real backend, this would invalidate the token
-    return Promise.resolve();
+    try {
+      // Call logout endpoint if available
+      await apiClient.post(API_ENDPOINTS.auth.logout);
+    } catch (error) {
+      // Ignore errors on logout
+    } finally {
+      // Always clear token locally
+      apiClient.clearAuthToken();
+    }
   },
 };
 

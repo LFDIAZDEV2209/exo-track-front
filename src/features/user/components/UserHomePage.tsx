@@ -22,7 +22,7 @@ export function UserHomePage() {
 
       try {
         setLoading(true);
-        const data = await declarationService.getByUserId(user.id);
+        const data = await declarationService.findAll(undefined, user.id);
         setAllDeclarations(data);
         setRecentDeclarations(data.slice(0, 3)); // Mostrar solo las 3 más recientes
       } catch (error) {

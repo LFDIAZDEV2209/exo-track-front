@@ -20,7 +20,7 @@ export function UserDeclarationsPage() {
 
       try {
         setLoading(true);
-        const data = await declarationService.getByUserId(user.id);
+        const data = await declarationService.findAll(undefined, user.id);
         setDeclarations(data);
       } catch (error) {
         console.error('Error loading declarations:', error);

@@ -19,7 +19,7 @@ export function DeclarationsPage({ customerId }: DeclarationsPageProps) {
     const fetchDeclarations = async () => {
       try {
         setLoading(true);
-        const data = await declarationService.getByUserId(customerId);
+        const data = await declarationService.findAll(undefined, customerId);
         setDeclarations(data);
       } catch (error) {
         console.error('Error loading declarations:', error);

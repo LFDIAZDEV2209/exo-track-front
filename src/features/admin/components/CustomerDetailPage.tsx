@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { FileText, Loader2, ArrowLeft, Calendar, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { clientService, declarationService } from '@/services';
+import { userService, declarationService } from '@/services';
 import { Badge } from '@/shared/ui/badge';
 import { useRouter } from 'next/navigation';
 
@@ -24,11 +24,14 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
       try {
         setLoading(true);
         const [clientData, declarationsData] = await Promise.all([
-          clientService.getById(customerId),
-          declarationService.getByUserId(customerId),
+          userService.findOne(customerId),
+          declarationService.findAll(undefined, customerId),
         ]);
 
-        setClient(clientData);
+        setClient({
+          ...clientData,
+          totalDeclarations: declarationsData.length,
+        });
         setDeclarations(declarationsData);
       } catch (error) {
         console.error('Error loading customer:', error);
