@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ClienteSidebar } from '@/shared/layout/customer-sidebar';
 import { Header } from '@/shared/layout/header';
 import { useAuthStore } from '@/stores/auth-store';
+import { UserRole } from '@/types/user-role.type';
 
 export default function ClienteLayout({
   children,
@@ -15,12 +16,12 @@ export default function ClienteLayout({
   const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'cliente') {
+    if (!isAuthenticated || user?.role !== UserRole.USER) {
       router.push('/login');
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.role !== 'cliente') {
+  if (!isAuthenticated || user?.role !== UserRole.USER) {
     return null;
   }
 

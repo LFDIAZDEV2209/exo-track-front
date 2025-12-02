@@ -20,8 +20,14 @@ export const clientSchema = z.object({
   phoneNumber: z
     .string()
     .min(7, 'El teléfono debe tener al menos 7 caracteres')
-    .max(10, 'El teléfono no puede tener más de 10 caracteres'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').optional(),
+    .max(15, 'El teléfono no puede tener más de 15 caracteres'),
+  password: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.length >= 8,
+      { message: 'La contraseña debe tener al menos 8 caracteres' }
+    ),
 });
 
 export const declarationSchema = z.object({

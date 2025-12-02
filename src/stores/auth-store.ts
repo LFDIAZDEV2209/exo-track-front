@@ -11,6 +11,7 @@ interface AuthState {
   login: (user: User, token: string) => void;
   logout: () => void;
   setToken: (token: string) => void;
+  initializeAuth: () => Promise<void>;
 }
 
 // Helper functions for token management
@@ -31,7 +32,7 @@ const removeStoredToken = (): void => {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: getStoredToken(),
       isAuthenticated: false,
@@ -47,10 +48,54 @@ export const useAuthStore = create<AuthState>()(
         setStoredToken(token);
         set({ token });
       },
+      initializeAuth: async () => {
+        // Si hay un token pero no hay usuario, intentar restaurar la sesión
+        const token = getStoredToken();
+        const currentState = get();
+        
+        if (token && !currentState.user) {
+          try {
+            // Verificar el token con el backend
+            const { authService } = await import('@/services/auth.service');
+            const user = await authService.getCurrentUser();
+            
+            // Si el token es válido, restaurar la sesión
+            set({ user, token, isAuthenticated: true });
+          } catch (error) {
+            // Si el token es inválido, limpiar todo
+            console.error('[AuthStore] Failed to restore session:', error);
+            removeStoredToken();
+            set({ user: null, token: null, isAuthenticated: false });
+          }
+        } else if (token && currentState.user) {
+          // Si hay token y usuario, asegurar que isAuthenticated sea true
+          set({ isAuthenticated: true });
+        } else if (!token) {
+          // Si no hay token, limpiar todo
+          set({ user: null, token: null, isAuthenticated: false });
+        }
+      },
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated,
+        token: state.token, // También persistir el token
+      }),
+      // Al rehidratar, sincronizar el token de localStorage
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          const token = getStoredToken();
+          if (token && token !== state.token) {
+            state.token = token;
+          }
+          // Si hay token pero isAuthenticated es false, intentar restaurar
+          if (token && !state.isAuthenticated && state.user) {
+            state.isAuthenticated = true;
+          }
+        }
+      },
     }
   )
 );

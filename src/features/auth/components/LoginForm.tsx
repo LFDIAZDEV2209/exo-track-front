@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/auth-store';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { authService } from '@/services';
+import { UserRole } from '@/types/user-role.type';
 
 export function LoginForm() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export function LoginForm() {
       });
 
       console.log('[LoginForm] Login successful:', response);
+      console.log('[LoginForm] User role:', response.user.role);
 
       // Login successful - save user and token
       login(response.user, response.token);
@@ -50,10 +52,14 @@ export function LoginForm() {
         description: `Has iniciado sesión como ${response.user.fullName}`,
       });
 
-      // Redirect based on role
-      if (response.user.role === 'admin') {
+      // Redirect based on role - usar el enum UserRole
+      if (response.user.role === UserRole.ADMIN) {
         router.push('/admin/dashboard');
+      } else if (response.user.role === UserRole.USER) {
+        router.push('/user/home');
       } else {
+        // Fallback: si el role no coincide, redirigir según el valor string
+        console.warn('[LoginForm] Unknown role, redirecting to user home:', response.user.role);
         router.push('/user/home');
       }
     } catch (error: any) {
@@ -82,7 +88,15 @@ export function LoginForm() {
 
   return (
     <CardContent>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSubmit(onSubmit)(e);
+        }} 
+        className="space-y-4" 
+        noValidate
+      >
         <div className="space-y-2">
           <Label htmlFor="cedula">Cédula</Label>
           <Input

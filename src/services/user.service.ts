@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { User } from '@/types';
 import type { PaginatedResponse } from '@/lib/api/types';
+import { UserRole } from '@/types/user-role.type';
 
 export interface PaginationDto {
   limit?: number;
@@ -34,7 +35,19 @@ export const userService = {
    * @returns Usuario encontrado
    */
   async findOne(term: string): Promise<User> {
-    return apiClient.get<User>(API_ENDPOINTS.users.findOne(term));
+    // El backend devuelve el role como string ('user' o 'admin')
+    // Necesitamos hacer un cast temporal para acceder al valor como string
+    const user = await apiClient.get<User>(API_ENDPOINTS.users.findOne(term)) as any;
+    
+    // Mapear el role del backend (string) al enum UserRole
+    // El backend devuelve 'user' o 'admin' como strings
+    if (user.role === 'user' || user.role === UserRole.USER) {
+      user.role = UserRole.USER;
+    } else if (user.role === 'admin' || user.role === UserRole.ADMIN) {
+      user.role = UserRole.ADMIN;
+    }
+    
+    return user as User;
   },
 
   /**

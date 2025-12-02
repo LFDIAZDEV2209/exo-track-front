@@ -43,7 +43,8 @@ class ApiClient {
     };
 
     // Add JWT token to headers if available
-    if (token) {
+    // NO agregar token en el endpoint de login
+    if (token && !endpoint.includes('/auth/login')) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
@@ -61,13 +62,13 @@ class ApiClient {
       if (!response.ok) {
         // Handle 401 Unauthorized - token expired or invalid
         if (response.status === 401) {
-          // Don't redirect on login endpoint
+          // NO redirigir en el endpoint de login - solo lanzar el error
           if (!endpoint.includes('/auth/login')) {
             this.removeToken();
-            // Redirect to login if we're in the browser
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
-            }
+            // NO hacer redirect automático aquí - dejar que los componentes manejen el error
+            // if (typeof window !== 'undefined') {
+            //   window.location.href = '/login';
+            // }
           }
         }
 
