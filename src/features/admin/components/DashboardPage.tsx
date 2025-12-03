@@ -9,6 +9,7 @@ import { userService, declarationService } from '@/services';
 import { useAuthStore } from '@/stores/auth-store';
 import { formatRelativeDate } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { DeclarationStatus } from '@/types';
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
@@ -137,10 +138,10 @@ export function DashboardPage() {
                     </p>
                   </div>
                   <Badge
-                    variant={declaration.status === 'completed' ? 'default' : 'secondary'}
-                    className={declaration.status === 'pending' ? 'bg-orange-100 text-orange-800' : ''}
+                    variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
+                    className={declaration.status === DeclarationStatus.PENDING ? 'bg-orange-100 text-orange-800' : ''}
                   >
-                    {declaration.status === 'completed' ? 'Finalizada' : 'Pendiente'}
+                    {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
                   </Badge>
                   <p className="text-sm text-muted-foreground">
                     {formatRelativeDate(declaration.updatedAt)}

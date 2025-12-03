@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { userService, declarationService } from '@/services';
 import { Badge } from '@/shared/ui/badge';
 import { useRouter } from 'next/navigation';
+import { DeclarationStatus } from '@/types';
 
 interface CustomerDetailPageProps {
   customerId: string;
@@ -112,14 +113,14 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
                     <FileText className="h-6 w-6 text-blue-600" />
                   </div>
                   <Badge
-                    variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
+                    variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
                     className={
-                      declaration.status === 'borrador'
+                      declaration.status === DeclarationStatus.PENDING
                         ? 'bg-orange-100 text-orange-800'
                         : 'bg-green-100 text-green-800'
                     }
                   >
-                    {declaration.status === 'finalizada' ? 'Finalizada' : 'Borrador'}
+                    {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
                   </Badge>
                 </div>
                 <h3 className="text-2xl font-bold mb-2">Año {declaration.taxableYear}</h3>

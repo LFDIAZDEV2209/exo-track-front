@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Income } from '@/types';
+import type { PaginatedResponse } from '@/lib/api/types';
 
 export interface PaginationDto {
   limit?: number;
@@ -25,12 +26,21 @@ export const incomeService = {
     paginationDto?: PaginationDto,
     declarationId?: string
   ): Promise<Income[]> {
-    return apiClient.get<Income[]>(
+    const response = await apiClient.get<PaginatedResponse<Income>>(
       API_ENDPOINTS.income.findAll({
         ...paginationDto,
         declarationId,
       })
     );
+    
+    // El backend devuelve { data: [...], total, limit, offset }
+    const incomes = response?.data || [];
+    
+    // Convertir amount de string a number si es necesario
+    return incomes.map((income: any) => ({
+      ...income,
+      amount: typeof income.amount === 'string' ? parseFloat(income.amount) : income.amount,
+    }));
   },
 
   /**
@@ -39,7 +49,12 @@ export const incomeService = {
    * @returns Ingreso encontrado
    */
   async findOne(term: string): Promise<Income> {
-    return apiClient.get<Income>(API_ENDPOINTS.income.findOne(term));
+    const income = await apiClient.get<Income>(API_ENDPOINTS.income.findOne(term));
+    // Convertir amount de string a number si es necesario
+    return {
+      ...income,
+      amount: typeof income.amount === 'string' ? parseFloat(income.amount) : income.amount,
+    };
   },
 
   /**
@@ -48,11 +63,7 @@ export const incomeService = {
    * @returns Ingreso creado
    */
   async create(data: CreateIncomeRequest): Promise<Income> {
-    return apiClient.post<Income>(API_ENDPOINTS.income.create, {
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.post<Income>(API_ENDPOINTS.income.create, data);
   },
 
   /**
@@ -62,10 +73,7 @@ export const incomeService = {
    * @returns Ingreso actualizado
    */
   async update(id: string, data: Partial<CreateIncomeRequest>): Promise<Income> {
-    return apiClient.put<Income>(API_ENDPOINTS.income.update(id), {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.put<Income>(API_ENDPOINTS.income.update(id), data);
   },
 
   /**

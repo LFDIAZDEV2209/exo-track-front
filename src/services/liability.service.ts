@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Liability } from '@/types';
+import type { PaginatedResponse } from '@/lib/api/types';
 
 export interface PaginationDto {
   limit?: number;
@@ -25,12 +26,21 @@ export const liabilityService = {
     paginationDto?: PaginationDto,
     declarationId?: string
   ): Promise<Liability[]> {
-    return apiClient.get<Liability[]>(
+    const response = await apiClient.get<PaginatedResponse<Liability>>(
       API_ENDPOINTS.liabilities.findAll({
         ...paginationDto,
         declarationId,
       })
     );
+    
+    // El backend devuelve { data: [...], total, limit, offset }
+    const liabilities = response?.data || [];
+    
+    // Convertir amount de string a number si es necesario
+    return liabilities.map((liability: any) => ({
+      ...liability,
+      amount: typeof liability.amount === 'string' ? parseFloat(liability.amount) : liability.amount,
+    }));
   },
 
   /**
@@ -39,7 +49,12 @@ export const liabilityService = {
    * @returns Deuda encontrada
    */
   async findOne(term: string): Promise<Liability> {
-    return apiClient.get<Liability>(API_ENDPOINTS.liabilities.findOne(term));
+    const liability = await apiClient.get<Liability>(API_ENDPOINTS.liabilities.findOne(term));
+    // Convertir amount de string a number si es necesario
+    return {
+      ...liability,
+      amount: typeof liability.amount === 'string' ? parseFloat(liability.amount) : liability.amount,
+    };
   },
 
   /**
@@ -48,11 +63,7 @@ export const liabilityService = {
    * @returns Deuda creada
    */
   async create(data: CreateLiabilityRequest): Promise<Liability> {
-    return apiClient.post<Liability>(API_ENDPOINTS.liabilities.create, {
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.post<Liability>(API_ENDPOINTS.liabilities.create, data);
   },
 
   /**
@@ -62,10 +73,7 @@ export const liabilityService = {
    * @returns Deuda actualizada
    */
   async update(id: string, data: Partial<CreateLiabilityRequest>): Promise<Liability> {
-    return apiClient.put<Liability>(API_ENDPOINTS.liabilities.update(id), {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.put<Liability>(API_ENDPOINTS.liabilities.update(id), data);
   },
 
   /**

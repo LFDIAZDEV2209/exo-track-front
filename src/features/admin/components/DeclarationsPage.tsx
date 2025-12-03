@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { declarationService } from '@/services';
 import { Badge } from '@/shared/ui/badge';
 import Link from 'next/link';
+import { DeclarationStatus } from '@/types';
 
 interface DeclarationsPageProps {
   customerId: string;
@@ -74,9 +75,9 @@ export function DeclarationsPage({ customerId }: DeclarationsPageProps) {
                       </p>
                     </div>
                     <Badge
-                      variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
+                      variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
                     >
-                      {declaration.status === 'finalizada' ? 'Finalizada' : 'Borrador'}
+                      {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
                     </Badge>
                   </div>
                 </Link>

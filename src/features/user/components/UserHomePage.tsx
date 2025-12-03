@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
+import { DeclarationStatus } from '@/types';
 
 export function UserHomePage() {
   const user = useAuthStore((state) => state.user);
@@ -36,8 +37,8 @@ export function UserHomePage() {
   }, [user?.id]);
 
   const totalCount = allDeclarations.length;
-  const completedCount = allDeclarations.filter((d) => d.status === 'finalizada').length;
-  const inProcessCount = allDeclarations.filter((d) => d.status === 'borrador').length;
+  const completedCount = allDeclarations.filter((d) => d.status === DeclarationStatus.COMPLETED).length;
+  const inProcessCount = allDeclarations.filter((d) => d.status === DeclarationStatus.PENDING).length;
 
   const userName = user?.fullName?.split(' ')[0] || 'Usuario';
 
@@ -104,14 +105,14 @@ export function UserHomePage() {
                       <FileText className="h-6 w-6 text-blue-600" />
                     </div>
                     <Badge
-                      variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
+                      variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
                       className={
-                        declaration.status === 'borrador'
+                        declaration.status === DeclarationStatus.PENDING
                           ? 'bg-orange-100 text-orange-800'
                           : 'bg-green-100 text-green-800'
                       }
                     >
-                      {declaration.status === 'finalizada' ? 'Finalizada' : 'En Proceso'}
+                      {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'En Proceso'}
                     </Badge>
                   </div>
                   <h3 className="text-2xl font-bold mb-2">Año {declaration.taxableYear}</h3>

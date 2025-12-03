@@ -1,4 +1,4 @@
 export enum DeclarationStatus {
-  DRAFT = 'borrador',
-  COMPLETED = 'finalizada',
+  PENDING = 'pending',
+  COMPLETED = 'completed',
 }

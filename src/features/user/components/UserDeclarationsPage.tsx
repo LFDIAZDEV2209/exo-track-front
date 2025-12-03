@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { Badge } from '@/shared/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/shared/ui/button';
+import { DeclarationStatus } from '@/types';
 
 export function UserDeclarationsPage() {
   const user = useAuthStore((state) => state.user);
@@ -72,14 +73,14 @@ export function UserDeclarationsPage() {
                     <FileText className="h-6 w-6 text-blue-600" />
                   </div>
                   <Badge
-                    variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
+                    variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
                     className={
-                      declaration.status === 'borrador'
+                      declaration.status === DeclarationStatus.PENDING
                         ? 'bg-orange-100 text-orange-800'
                         : 'bg-green-100 text-green-800'
                     }
                   >
-                    {declaration.status === 'finalizada' ? 'Finalizada' : 'En Proceso'}
+                    {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'En Proceso'}
                   </Badge>
                 </div>
                 <h3 className="text-2xl font-bold mb-2">Año {declaration.taxableYear}</h3>

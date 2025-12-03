@@ -136,16 +136,16 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </div>
         <div className="flex items-center gap-2">
           <Badge
-            variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
+            variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
             className={
-              declaration.status === 'borrador'
+              declaration.status === DeclarationStatus.PENDING
                 ? 'bg-orange-100 text-orange-800'
                 : 'bg-green-100 text-green-800'
             }
           >
-            {declaration.status === 'finalizada' ? 'Finalizada' : 'Borrador'}
+            {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
           </Badge>
-          {declaration.status === 'borrador' && (
+          {declaration.status === DeclarationStatus.PENDING && (
             <Button onClick={handleFinalize}>
               Finalizar Declaración
             </Button>

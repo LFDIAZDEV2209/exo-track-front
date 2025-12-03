@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Asset } from '@/types';
+import type { PaginatedResponse } from '@/lib/api/types';
 
 export interface PaginationDto {
   limit?: number;
@@ -25,12 +26,21 @@ export const assetService = {
     paginationDto?: PaginationDto,
     declarationId?: string
   ): Promise<Asset[]> {
-    return apiClient.get<Asset[]>(
+    const response = await apiClient.get<PaginatedResponse<Asset>>(
       API_ENDPOINTS.assets.findAll({
         ...paginationDto,
         declarationId,
       })
     );
+    
+    // El backend devuelve { data: [...], total, limit, offset }
+    const assets = response?.data || [];
+    
+    // Convertir amount de string a number si es necesario
+    return assets.map((asset: any) => ({
+      ...asset,
+      amount: typeof asset.amount === 'string' ? parseFloat(asset.amount) : asset.amount,
+    }));
   },
 
   /**
@@ -39,7 +49,12 @@ export const assetService = {
    * @returns Activo encontrado
    */
   async findOne(term: string): Promise<Asset> {
-    return apiClient.get<Asset>(API_ENDPOINTS.assets.findOne(term));
+    const asset = await apiClient.get<Asset>(API_ENDPOINTS.assets.findOne(term));
+    // Convertir amount de string a number si es necesario
+    return {
+      ...asset,
+      amount: typeof asset.amount === 'string' ? parseFloat(asset.amount) : asset.amount,
+    };
   },
 
   /**
@@ -48,11 +63,7 @@ export const assetService = {
    * @returns Activo creado
    */
   async create(data: CreateAssetRequest): Promise<Asset> {
-    return apiClient.post<Asset>(API_ENDPOINTS.assets.create, {
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.post<Asset>(API_ENDPOINTS.assets.create, data);
   },
 
   /**
@@ -62,10 +73,7 @@ export const assetService = {
    * @returns Activo actualizado
    */
   async update(id: string, data: Partial<CreateAssetRequest>): Promise<Asset> {
-    return apiClient.put<Asset>(API_ENDPOINTS.assets.update(id), {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.put<Asset>(API_ENDPOINTS.assets.update(id), data);
   },
 
   /**
