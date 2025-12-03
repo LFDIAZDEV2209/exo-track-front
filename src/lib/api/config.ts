@@ -16,10 +16,19 @@ export const API_ENDPOINTS = {
   users: {
     findAll: (params?: { limit?: number; offset?: number }) => {
       const queryParams = new URLSearchParams();
-      if (params?.limit) queryParams.append('limit', params.limit.toString());
-      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      if (params?.limit !== undefined) {
+        queryParams.append('limit', params.limit.toString());
+      }
+      if (params?.offset !== undefined) {
+        queryParams.append('offset', params.offset.toString());
+      }
       const query = queryParams.toString();
-      return `/users${query ? `?${query}` : ''}`;
+      const endpoint = `/users${query ? `?${query}` : ''}`;
+      
+      // Debug: Ver qué URL se está generando
+      console.log('[API Config] Generated endpoint:', endpoint);
+      
+      return endpoint;
     },
     findOne: (term: string) => `/users/${term}`,
     update: (id: string) => `/users/${id}`,

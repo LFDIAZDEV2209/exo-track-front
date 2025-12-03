@@ -40,6 +40,13 @@ export interface RecentActivityItem {
   };
 }
 
+export interface FindAllDeclarationsResponse {
+  declarations: Declaration[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export const declarationService = {
   /**
    * Obtener todas las declaraciones con paginación
@@ -59,6 +66,31 @@ export const declarationService = {
     );
 
     return response.data || [];
+  },
+
+  /**
+   * Obtener todas las declaraciones con paginación (incluye información de paginación)
+   * @param paginationDto - Parámetros de paginación (limit, offset)
+   * @param userId - ID del usuario (opcional) para filtrar por usuario
+   * @returns Objeto con declaraciones e información de paginación
+   */
+  async findAllWithPagination(
+    paginationDto?: PaginationDto,
+    userId?: string
+  ): Promise<FindAllDeclarationsResponse> {
+    const response = await apiClient.get<PaginatedResponse<Declaration>>(
+      API_ENDPOINTS.declarations.findAll({
+        ...paginationDto,
+        userId,
+      })
+    );
+
+    return {
+      declarations: response?.data || [],
+      total: response?.total || 0,
+      limit: response?.limit || 10,
+      offset: response?.offset || 0,
+    };
   },
 
   /**

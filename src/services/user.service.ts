@@ -24,18 +24,41 @@ export interface UpdateUserDto {
   password?: string;
 }
 
+export interface FindAllUsersResponse {
+  users: User[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export const userService = {
   /**
-   * Obtener todos los usuarios con paginación
+   * Obtener todos los usuarios con paginación (incluye información de paginación)
    * @param paginationDto - Parámetros de paginación (limit, offset)
-   * @returns Array de usuarios
+   * @returns Objeto con usuarios e información de paginación
    */
-  async findAll(paginationDto?: PaginationDto): Promise<User[]> {
-    const response = await apiClient.get<PaginatedResponse<User>>(
-      API_ENDPOINTS.users.findAll(paginationDto)
-    );
+  async findAllWithPagination(paginationDto?: PaginationDto): Promise<FindAllUsersResponse> {
+    // Debug: Ver qué endpoint se está llamando
+    const endpoint = API_ENDPOINTS.users.findAll(paginationDto);
+    console.log('[UserService] Calling endpoint:', endpoint);
+    console.log('[UserService] Pagination params:', paginationDto);
     
-    return response?.data || [];
+    const response = await apiClient.get<PaginatedResponse<User>>(endpoint);
+    
+    // Debug: Ver qué respuesta se recibió del backend
+    console.log('[UserService] Backend response:', {
+      dataCount: response?.data?.length || 0,
+      total: response?.total,
+      limit: response?.limit,
+      offset: response?.offset,
+    });
+    
+    return {
+      users: response?.data || [],
+      total: response?.total || 0,
+      limit: response?.limit || 10,
+      offset: response?.offset || 0,
+    };
   },
 
   /**
