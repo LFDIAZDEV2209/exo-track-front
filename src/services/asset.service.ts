@@ -22,32 +22,6 @@ export interface FindAllAssetsResponse {
 }
 
 export const assetService = {
-  /**
-   * Obtener todos los activos con paginación
-   * @param paginationDto - Parámetros de paginación (limit, offset)
-   * @param declarationId - ID de la declaración (opcional) para filtrar
-   * @returns Array de activos
-   */
-  async findAll(
-    paginationDto?: PaginationDto,
-    declarationId?: string
-  ): Promise<Asset[]> {
-    const response = await apiClient.get<PaginatedResponse<Asset>>(
-      API_ENDPOINTS.assets.findAll({
-        ...paginationDto,
-        declarationId,
-      })
-    );
-    
-    // El backend devuelve { data: [...], total, limit, offset }
-    const assets = response?.data || [];
-    
-    // Convertir amount de string a number si es necesario
-    return assets.map((asset: any) => ({
-      ...asset,
-      amount: typeof asset.amount === 'string' ? parseFloat(asset.amount) : asset.amount,
-    }));
-  },
 
   /**
    * Obtener todos los activos con paginación (incluye información de paginación)
@@ -79,20 +53,6 @@ export const assetService = {
       total: response?.total || 0,
       limit: response?.limit || 10,
       offset: response?.offset || 0,
-    };
-  },
-
-  /**
-   * Obtener un activo por término (ID, etc.)
-   * @param term - Término de búsqueda
-   * @returns Activo encontrado
-   */
-  async findOne(term: string): Promise<Asset> {
-    const asset = await apiClient.get<Asset>(API_ENDPOINTS.assets.findOne(term));
-    // Convertir amount de string a number si es necesario
-    return {
-      ...asset,
-      amount: typeof asset.amount === 'string' ? parseFloat(asset.amount) : asset.amount,
     };
   },
 

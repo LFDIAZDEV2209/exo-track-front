@@ -48,25 +48,6 @@ export interface FindAllDeclarationsResponse {
 }
 
 export const declarationService = {
-  /**
-   * Obtener todas las declaraciones con paginación
-   * @param paginationDto - Parámetros de paginación (limit, offset)
-   * @param userId - ID del usuario (opcional) para filtrar por usuario
-   * @returns Array de declaraciones
-   */
-  async findAll(
-    paginationDto?: PaginationDto,
-    userId?: string
-  ): Promise<Declaration[]> {
-    const response = await apiClient.get<PaginatedResponse<Declaration>>(
-      API_ENDPOINTS.declarations.findAll({
-        ...paginationDto,
-        userId,
-      })
-    );
-
-    return response.data || [];
-  },
 
   /**
    * Obtener todas las declaraciones con paginación (incluye información de paginación)

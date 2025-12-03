@@ -8,7 +8,6 @@ export const API_ENDPOINTS = {
   // Auth
   auth: {
     login: '/auth/login',
-    logout: '/auth/logout',
     register: '/auth/register',
     checkAuthStatus: '/auth/check-auth-status',
   },
@@ -62,7 +61,6 @@ export const API_ENDPOINTS = {
       const query = queryParams.toString();
       return `/incomes${query ? `?${query}` : ''}`;
     },
-    findOne: (term: string) => `/incomes/${term}`,
     create: '/incomes',
     update: (id: string) => `/incomes/${id}`,
     remove: (id: string) => `/incomes/${id}`,
@@ -77,7 +75,6 @@ export const API_ENDPOINTS = {
       const query = queryParams.toString();
       return `/assets${query ? `?${query}` : ''}`;
     },
-    findOne: (term: string) => `/assets/${term}`,
     create: '/assets',
     update: (id: string) => `/assets/${id}`,
     remove: (id: string) => `/assets/${id}`,
@@ -92,7 +89,6 @@ export const API_ENDPOINTS = {
       const query = queryParams.toString();
       return `/liabilities${query ? `?${query}` : ''}`;
     },
-    findOne: (term: string) => `/liabilities/${term}`,
     create: '/liabilities',
     update: (id: string) => `/liabilities/${id}`,
     remove: (id: string) => `/liabilities/${id}`,

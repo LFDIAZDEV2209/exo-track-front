@@ -22,32 +22,6 @@ export interface FindAllIncomesResponse {
 }
 
 export const incomeService = {
-  /**
-   * Obtener todos los ingresos con paginación
-   * @param paginationDto - Parámetros de paginación (limit, offset)
-   * @param declarationId - ID de la declaración (opcional) para filtrar
-   * @returns Array de ingresos
-   */
-  async findAll(
-    paginationDto?: PaginationDto,
-    declarationId?: string
-  ): Promise<Income[]> {
-    const response = await apiClient.get<PaginatedResponse<Income>>(
-      API_ENDPOINTS.income.findAll({
-        ...paginationDto,
-        declarationId,
-      })
-    );
-    
-    // El backend devuelve { data: [...], total, limit, offset }
-    const incomes = response?.data || [];
-    
-    // Convertir amount de string a number si es necesario
-    return incomes.map((income: any) => ({
-      ...income,
-      amount: typeof income.amount === 'string' ? parseFloat(income.amount) : income.amount,
-    }));
-  },
 
   /**
    * Obtener todos los ingresos con paginación (incluye información de paginación)
@@ -79,20 +53,6 @@ export const incomeService = {
       total: response?.total || 0,
       limit: response?.limit || 10,
       offset: response?.offset || 0,
-    };
-  },
-
-  /**
-   * Obtener un ingreso por término (ID, etc.)
-   * @param term - Término de búsqueda
-   * @returns Ingreso encontrado
-   */
-  async findOne(term: string): Promise<Income> {
-    const income = await apiClient.get<Income>(API_ENDPOINTS.income.findOne(term));
-    // Convertir amount de string a number si es necesario
-    return {
-      ...income,
-      amount: typeof income.amount === 'string' ? parseFloat(income.amount) : income.amount,
     };
   },
 

@@ -141,18 +141,6 @@ export const authService = {
     }
     
     return user;
-  },
-
-  async logout(): Promise<void> {
-    try {
-      // Call logout endpoint if available
-      await apiClient.post(API_ENDPOINTS.auth.logout);
-    } catch (error) {
-      // Ignore errors on logout
-    } finally {
-      // Always clear token locally
-      apiClient.clearAuthToken();
-    }
-  },
+  }
 };
 

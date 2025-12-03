@@ -23,9 +23,12 @@ export function UserHomePage() {
 
       try {
         setLoading(true);
-        const data = await declarationService.findAll(undefined, user.id);
-        setAllDeclarations(data);
-        setRecentDeclarations(data.slice(0, 3)); // Mostrar solo las 3 más recientes
+        const response = await declarationService.findAllWithPagination(
+          { limit: 3, offset: 0 },
+          user.id
+        );
+        setRecentDeclarations(response.declarations);
+        setAllDeclarations(response.declarations); // Usar los mismos 3 para estadísticas
       } catch (error) {
         console.error('Error loading declarations:', error);
       } finally {

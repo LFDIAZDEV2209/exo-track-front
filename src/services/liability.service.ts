@@ -22,32 +22,6 @@ export interface FindAllLiabilitiesResponse {
 }
 
 export const liabilityService = {
-  /**
-   * Obtener todas las deudas con paginación
-   * @param paginationDto - Parámetros de paginación (limit, offset)
-   * @param declarationId - ID de la declaración (opcional) para filtrar
-   * @returns Array de deudas
-   */
-  async findAll(
-    paginationDto?: PaginationDto,
-    declarationId?: string
-  ): Promise<Liability[]> {
-    const response = await apiClient.get<PaginatedResponse<Liability>>(
-      API_ENDPOINTS.liabilities.findAll({
-        ...paginationDto,
-        declarationId,
-      })
-    );
-    
-    // El backend devuelve { data: [...], total, limit, offset }
-    const liabilities = response?.data || [];
-    
-    // Convertir amount de string a number si es necesario
-    return liabilities.map((liability: any) => ({
-      ...liability,
-      amount: typeof liability.amount === 'string' ? parseFloat(liability.amount) : liability.amount,
-    }));
-  },
 
   /**
    * Obtener todas las deudas con paginación (incluye información de paginación)
@@ -79,20 +53,6 @@ export const liabilityService = {
       total: response?.total || 0,
       limit: response?.limit || 10,
       offset: response?.offset || 0,
-    };
-  },
-
-  /**
-   * Obtener una deuda por término (ID, etc.)
-   * @param term - Término de búsqueda
-   * @returns Deuda encontrada
-   */
-  async findOne(term: string): Promise<Liability> {
-    const liability = await apiClient.get<Liability>(API_ENDPOINTS.liabilities.findOne(term));
-    // Convertir amount de string a number si es necesario
-    return {
-      ...liability,
-      amount: typeof liability.amount === 'string' ? parseFloat(liability.amount) : liability.amount,
     };
   },
 
