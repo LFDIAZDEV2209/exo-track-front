@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button';
 import { cn } from '@/lib/utils';
 
 interface FileUploadProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (file: File | null) => void;
   accept?: string;
   disabled?: boolean;
 }
@@ -57,7 +57,8 @@ export function FileUpload({ onFileSelect, accept = '.xlsx,.xls', disabled }: Fi
 
   const removeFile = useCallback(() => {
     setFile(null);
-  }, []);
+    onFileSelect(null);
+  }, [onFileSelect]);
 
   if (file) {
     return (

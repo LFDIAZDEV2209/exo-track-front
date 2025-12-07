@@ -1,44 +1,91 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Liability } from '@/types';
+import type { PaginatedResponse } from '@/lib/api/types';
+
+export interface PaginationDto {
+  limit?: number;
+  offset?: number;
+}
 
 export interface CreateLiabilityRequest {
   declarationId: string;
   concept: string;
   amount: number;
-  source: Liability['source'];
+}
+
+export interface FindAllLiabilitiesResponse {
+  liabilities: Liability[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export const liabilityService = {
-  async getAll(): Promise<Liability[]> {
-    return apiClient.get<Liability[]>(API_ENDPOINTS.liabilities.list);
+
+  /**
+   * Obtener todas las deudas con paginación (incluye información de paginación)
+   * @param paginationDto - Parámetros de paginación (limit, offset)
+   * @param declarationId - ID de la declaración (opcional) para filtrar
+   * @returns Objeto con deudas e información de paginación
+   */
+  async findAllWithPagination(
+    paginationDto?: PaginationDto,
+    declarationId?: string
+  ): Promise<FindAllLiabilitiesResponse> {
+    const response = await apiClient.get<PaginatedResponse<Liability>>(
+      API_ENDPOINTS.liabilities.findAll({
+        ...paginationDto,
+        declarationId,
+      })
+    );
+    
+    const liabilities = response?.data || [];
+    
+    // Convertir amount de string a number si es necesario
+    const convertedLiabilities = liabilities.map((liability: any) => ({
+      ...liability,
+      amount: typeof liability.amount === 'string' ? parseFloat(liability.amount) : liability.amount,
+    }));
+    
+    return {
+      liabilities: convertedLiabilities,
+      total: response?.total || 0,
+      limit: response?.limit || 10,
+      offset: response?.offset || 0,
+    };
   },
 
-  async getById(id: string): Promise<Liability> {
-    return apiClient.get<Liability>(API_ENDPOINTS.liabilities.get(id));
-  },
-
-  async getByDeclaration(declarationId: string): Promise<Liability[]> {
-    return apiClient.get<Liability[]>(API_ENDPOINTS.liabilities.getByDeclaration(declarationId));
-  },
-
+  /**
+   * Crear una nueva deuda
+   * @param data - Datos de la deuda
+   * @returns Deuda creada
+   */
   async create(data: CreateLiabilityRequest): Promise<Liability> {
-    return apiClient.post<Liability>(API_ENDPOINTS.liabilities.create, {
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.post<Liability>(API_ENDPOINTS.liabilities.create, data);
   },
 
-  async update(id: string, data: Partial<CreateLiabilityRequest>): Promise<Liability> {
-    return apiClient.patch<Liability>(API_ENDPOINTS.liabilities.update(id), {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+  /**
+   * Actualizar una deuda (usa PUT según backend)
+   * @param id - ID de la deuda
+   * @param data - Datos a actualizar (solo concept y amount, sin declarationId ni source)
+   * @returns Deuda actualizada
+   */
+  async update(id: string, data: { concept?: string; amount?: number }): Promise<Liability> {
+    // Filtrar solo los campos permitidos para actualizar
+    const payload: { concept?: string; amount?: number } = {};
+    if (data.concept !== undefined) payload.concept = data.concept;
+    if (data.amount !== undefined) payload.amount = data.amount;
+    
+    return apiClient.put<Liability>(API_ENDPOINTS.liabilities.update(id), payload);
   },
 
-  async delete(id: string): Promise<void> {
-    return apiClient.delete<void>(API_ENDPOINTS.liabilities.delete(id));
+  /**
+   * Eliminar una deuda
+   * @param id - ID de la deuda
+   */
+  async remove(id: string): Promise<void> {
+    return apiClient.delete<void>(API_ENDPOINTS.liabilities.remove(id));
   },
 };
 
