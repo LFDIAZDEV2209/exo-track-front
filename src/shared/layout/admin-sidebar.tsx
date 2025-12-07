@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, FileText } from 'lucide-react';
+import { LayoutDashboard, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/ui-store';
+import Image from 'next/image';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -33,27 +34,28 @@ export function AdminSidebar() {
         )}
       >
         <div className="flex h-16 items-center gap-2 border-b px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <FileText className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg transition-transform duration-300 hover:scale-110">
+            <Image src="/logo.png" alt="Logo" width={40} height={40} className="object-contain" />
           </div>
           <span className="text-lg font-bold">ExoTrack</span>
         </div>
 
         <nav className="flex-1 space-y-1 p-4">
-          {navigation.map((item) => {
+          {navigation.map((item, index) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-in-out cursor-pointer animate-in fade-in slide-in-from-left-4',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-sm scale-[1.02]'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-[1.02]'
                 )}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-5 w-5 transition-transform duration-200" />
                 {item.name}
               </Link>
             );

@@ -10,8 +10,8 @@ import { DataSource } from '@/types';
 interface DataTableItem {
   id: string;
   concept: string;
-  amount: number;
-  source: DataSource;
+  amount: number | string;
+  source: DataSource | string;
 }
 
 interface DataTableProps {
@@ -22,13 +22,33 @@ interface DataTableProps {
 }
 
 export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTableProps) {
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No hay registros
       </div>
     );
   }
+
+  // Normalizar el source (el backend puede devolver "MANUAL" o "EXOGENO" en mayúsculas)
+  const normalizeSource = (source: DataSource | string): DataSource => {
+    if (typeof source === 'string') {
+      const upperSource = source.toUpperCase();
+      if (upperSource === 'EXOGENO' || upperSource === 'EXOGENOUS') {
+        return DataSource.EXOGENO;
+      }
+      return DataSource.MANUAL;
+    }
+    return source;
+  };
+
+  // Normalizar el amount (puede venir como string)
+  const normalizeAmount = (amount: number | string): number => {
+    if (typeof amount === 'string') {
+      return parseFloat(amount);
+    }
+    return amount;
+  };
 
   return (
     <Table>
@@ -41,42 +61,52 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell className="font-medium">{item.concept}</TableCell>
-            <TableCell>{formatCurrency(item.amount)}</TableCell>
-            <TableCell>
-              <Badge variant={item.source === 'exogeno' ? 'default' : 'secondary'}>
-                {item.source === 'exogeno' ? 'Exógeno' : 'Manual'}
-              </Badge>
-            </TableCell>
-            {!readOnly && (
+        {data.map((item, index) => {
+          const source = normalizeSource(item.source);
+          const amount = normalizeAmount(item.amount);
+          
+          return (
+            <TableRow 
+              key={item.id}
+              className="animate-in fade-in slide-in-from-left-4 transition-colors duration-150 hover:bg-accent/50"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <TableCell className="font-medium">{item.concept}</TableCell>
+              <TableCell>{formatCurrency(amount)}</TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  {onEdit && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(item.id)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {onDelete && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(item.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+                <Badge variant={source === DataSource.EXOGENO ? 'default' : 'secondary'}>
+                  {source === DataSource.EXOGENO ? 'Exógeno' : 'Manual'}
+                </Badge>
               </TableCell>
-            )}
-          </TableRow>
-        ))}
+              {!readOnly && (
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(item.id)}
+                        className="transition-transform duration-150 hover:scale-110"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(item.id)}
+                        className="text-destructive hover:text-destructive transition-transform duration-150 hover:scale-110"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              )}
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
   useMockAPI: process.env.NEXT_PUBLIC_USE_MOCK_API === 'true',
   timeout: 10000,
 };
@@ -8,60 +8,91 @@ export const API_ENDPOINTS = {
   // Auth
   auth: {
     login: '/auth/login',
-    logout: '/auth/logout',
-    me: '/auth/me',
+    register: '/auth/register',
+    checkAuthStatus: '/auth/check-auth-status',
   },
   // Users
   users: {
-    list: '/users',
-    get: (id: string) => `/users/${id}`,
-    create: '/users',
+    findAll: (params?: { limit?: number; offset?: number }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit !== undefined) {
+        queryParams.append('limit', params.limit.toString());
+      }
+      if (params?.offset !== undefined) {
+        queryParams.append('offset', params.offset.toString());
+      }
+      const query = queryParams.toString();
+      const endpoint = `/users${query ? `?${query}` : ''}`;
+      
+      // Debug: Ver qué URL se está generando
+      console.log('[API Config] Generated endpoint:', endpoint);
+      
+      return endpoint;
+    },
+    findOne: (term: string) => `/users/${term}`,
     update: (id: string) => `/users/${id}`,
-    delete: (id: string) => `/users/${id}`,
-  },
-  // Clients (users with role cliente)
-  clients: {
-    list: '/users?role=cliente',
-    get: (id: string) => `/users/${id}`,
-    create: '/users',
-    update: (id: string) => `/users/${id}`,
-    delete: (id: string) => `/users/${id}`,
+    remove: (id: string) => `/users/${id}`,
+    stats: '/users/stats',
   },
   // Declarations
   declarations: {
-    list: '/declarations',
-    get: (id: string) => `/declarations/${id}`,
-    getByUser: (userId: string) => `/declarations?userId=${userId}`,
+    findAll: (params?: { limit?: number; offset?: number; userId?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      if (params?.userId) queryParams.append('userId', params.userId);
+      const query = queryParams.toString();
+      return `/declarations${query ? `?${query}` : ''}`;
+    },
+    findOne: (id: string) => `/declarations/${id}`,
     create: '/declarations',
     update: (id: string) => `/declarations/${id}`,
-    delete: (id: string) => `/declarations/${id}`,
+    remove: (id: string) => `/declarations/${id}`,
+    stats: '/declarations/stats',
+    recentActivity: '/declarations/recent-activity',
+    taxableYears: (userId: string) => `/declarations/taxable-years?userId=${userId}`,
   },
   // Income
   income: {
-    list: '/income',
-    get: (id: string) => `/income/${id}`,
-    getByDeclaration: (declarationId: string) => `/income?declarationId=${declarationId}`,
-    create: '/income',
-    update: (id: string) => `/income/${id}`,
-    delete: (id: string) => `/income/${id}`,
+    findAll: (params?: { limit?: number; offset?: number; declarationId?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      if (params?.declarationId) queryParams.append('declarationId', params.declarationId);
+      const query = queryParams.toString();
+      return `/incomes${query ? `?${query}` : ''}`;
+    },
+    create: '/incomes',
+    update: (id: string) => `/incomes/${id}`,
+    remove: (id: string) => `/incomes/${id}`,
   },
   // Assets
   assets: {
-    list: '/assets',
-    get: (id: string) => `/assets/${id}`,
-    getByDeclaration: (declarationId: string) => `/assets?declarationId=${declarationId}`,
+    findAll: (params?: { limit?: number; offset?: number; declarationId?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      if (params?.declarationId) queryParams.append('declarationId', params.declarationId);
+      const query = queryParams.toString();
+      return `/assets${query ? `?${query}` : ''}`;
+    },
     create: '/assets',
     update: (id: string) => `/assets/${id}`,
-    delete: (id: string) => `/assets/${id}`,
+    remove: (id: string) => `/assets/${id}`,
   },
   // Liabilities
   liabilities: {
-    list: '/liabilities',
-    get: (id: string) => `/liabilities/${id}`,
-    getByDeclaration: (declarationId: string) => `/liabilities?declarationId=${declarationId}`,
+    findAll: (params?: { limit?: number; offset?: number; declarationId?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      if (params?.declarationId) queryParams.append('declarationId', params.declarationId);
+      const query = queryParams.toString();
+      return `/liabilities${query ? `?${query}` : ''}`;
+    },
     create: '/liabilities',
     update: (id: string) => `/liabilities/${id}`,
-    delete: (id: string) => `/liabilities/${id}`,
+    remove: (id: string) => `/liabilities/${id}`,
   },
 };
 

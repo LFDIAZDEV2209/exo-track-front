@@ -1,33 +1,123 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { User } from '@/types';
+import type { PaginatedResponse } from '@/lib/api/types';
+import { UserRole } from '@/types/user-role.type';
+
+export interface PaginationDto {
+  limit?: number;
+  offset?: number;
+}
+
+export interface UsersStats {
+  totalUsers: number;
+  totalActiveUsers: number;
+  averageDeclarationsPerUser: number;
+}
+
+// DTO para actualizar usuario (solo los campos que el backend acepta)
+export interface UpdateUserDto {
+  fullName?: string;
+  documentNumber?: string;
+  email?: string;
+  phoneNumber?: string;
+  password?: string;
+}
+
+export interface FindAllUsersResponse {
+  users: User[];
+  total: number;
+  limit: number;
+  offset: number;
+}
 
 export const userService = {
-  async getAll(): Promise<User[]> {
-    return apiClient.get<User[]>(API_ENDPOINTS.users.list);
-  },
-
-  async getById(id: string): Promise<User> {
-    return apiClient.get<User>(API_ENDPOINTS.users.get(id));
-  },
-
-  async create(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    return apiClient.post<User>(API_ENDPOINTS.users.create, {
-      ...user,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  /**
+   * Obtener todos los usuarios con paginación (incluye información de paginación)
+   * @param paginationDto - Parámetros de paginación (limit, offset)
+   * @returns Objeto con usuarios e información de paginación
+   */
+  async findAllWithPagination(paginationDto?: PaginationDto): Promise<FindAllUsersResponse> {
+    // Debug: Ver qué endpoint se está llamando
+    const endpoint = API_ENDPOINTS.users.findAll(paginationDto);
+    console.log('[UserService] Calling endpoint:', endpoint);
+    console.log('[UserService] Pagination params:', paginationDto);
+    
+    const response = await apiClient.get<PaginatedResponse<User>>(endpoint);
+    
+    // Debug: Ver qué respuesta se recibió del backend
+    console.log('[UserService] Backend response:', {
+      dataCount: response?.data?.length || 0,
+      total: response?.total,
+      limit: response?.limit,
+      offset: response?.offset,
     });
+    
+    return {
+      users: response?.data || [],
+      total: response?.total || 0,
+      limit: response?.limit || 10,
+      offset: response?.offset || 0,
+    };
   },
 
-  async update(id: string, user: Partial<User>): Promise<User> {
-    return apiClient.patch<User>(API_ENDPOINTS.users.update(id), {
-      ...user,
-      updatedAt: new Date().toISOString(),
-    });
+  /**
+   * Obtener un usuario por término (ID, cédula, email, etc.)
+   * @param term - Término de búsqueda
+   * @returns Usuario encontrado
+   */
+  async findOne(term: string): Promise<User> {
+    // El backend devuelve el role como string ('user' o 'admin')
+    // Necesitamos hacer un cast temporal para acceder al valor como string
+    const user = await apiClient.get<User>(API_ENDPOINTS.users.findOne(term)) as any;
+    
+    // Mapear el role del backend (string) al enum UserRole
+    // El backend devuelve 'user' o 'admin' como strings
+    if (user.role === 'user' || user.role === UserRole.USER) {
+      user.role = UserRole.USER;
+    } else if (user.role === 'admin' || user.role === UserRole.ADMIN) {
+      user.role = UserRole.ADMIN;
+    }
+    
+    return user as User;
   },
 
-  async delete(id: string): Promise<void> {
-    return apiClient.delete<void>(API_ENDPOINTS.users.delete(id));
+  /**
+   * Obtener estadísticas de usuarios
+   * @returns Estadísticas de usuarios
+   */
+  async getStats(): Promise<UsersStats> {
+    return apiClient.get<UsersStats>(API_ENDPOINTS.users.stats);
+  },
+
+  /**
+   * Actualizar un usuario (usa PUT según backend)
+   * Solo envía los campos que el backend acepta según el DTO
+   * @param id - ID del usuario
+   * @param userData - Datos a actualizar (solo campos permitidos)
+   * @returns Usuario actualizado
+   */
+  async update(id: string, userData: UpdateUserDto): Promise<User> {
+    // Filtrar solo los campos que el backend acepta
+    const payload: UpdateUserDto = {};
+    
+    if (userData.fullName !== undefined) payload.fullName = userData.fullName;
+    if (userData.documentNumber !== undefined) payload.documentNumber = userData.documentNumber;
+    if (userData.email !== undefined) payload.email = userData.email;
+    if (userData.phoneNumber !== undefined) payload.phoneNumber = userData.phoneNumber;
+    if (userData.password !== undefined && userData.password.trim() !== '') {
+      payload.password = userData.password;
+    }
+    
+    return apiClient.put<User>(API_ENDPOINTS.users.update(id), payload);
+  },
+
+  /**
+   * Eliminar un usuario
+   * @param id - ID del usuario
+   */
+  async remove(id: string): Promise<void> {
+    return apiClient.delete<void>(API_ENDPOINTS.users.remove(id));
   },
 };
 

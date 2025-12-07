@@ -5,10 +5,11 @@ import { Users, FileText, AlertCircle, CheckCircle2, FileText as FileTextIcon, T
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { StatCard } from '@/shared/layout/stat-card';
 import { Badge } from '@/shared/ui/badge';
-import { clientService, declarationService } from '@/services';
+import { userService, declarationService } from '@/services';
 import { useAuthStore } from '@/stores/auth-store';
 import { formatRelativeDate } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { DeclarationStatus } from '@/types';
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
@@ -29,48 +30,36 @@ export function DashboardPage() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const [clients, declarations] = await Promise.all([
-          clientService.getAll(),
-          declarationService.getAll(),
+        
+        // Usar endpoints dedicados para estadísticas
+        const [usersStats, declarationsStats, recentActivityData] = await Promise.all([
+          userService.getStats(),
+          declarationService.getStats(),
+          declarationService.getRecentActivity(),
         ]);
 
-        const pending = declarations.filter((d) => d.status === 'borrador').length;
-        const now = new Date();
-        const thisMonth = declarations.filter((d) => {
-          const date = new Date(d.createdAt);
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-        });
-        const completedThisMonth = thisMonth.filter((d) => d.status === 'finalizada').length;
-        const clientsThisMonth = clients.filter((c) => {
-          const date = new Date(c.createdAt);
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-        }).length;
-
-        const completed = declarations.filter((d) => d.status === 'finalizada').length;
-        const completionRate = declarations.length > 0 
-          ? Math.round((completed / declarations.length) * 100) 
-          : 0;
-        const averagePerClient = clients.length > 0 
-          ? (declarations.length / clients.length).toFixed(1)
-          : '0.0';
-        const activeClients = clients.length;
-
-        // Ordenar declaraciones por fecha más reciente y tomar las 5 primeras
-        const sortedDeclarations = [...declarations]
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-          .slice(0, 5);
-
         setStats({
-          totalClients: clients.length,
-          totalDeclarations: declarations.length,
-          pendingDeclarations: pending,
-          completedThisMonth,
-          clientsThisMonth,
-          completionRate,
-          averagePerClient: parseFloat(averagePerClient),
-          activeClients,
+          totalClients: usersStats.totalUsers,
+          totalDeclarations: declarationsStats.totalDeclarations,
+          pendingDeclarations: declarationsStats.totalPending,
+          completedThisMonth: declarationsStats.completedThisMonth,
+          clientsThisMonth: 0, // No disponible en el endpoint actual
+          completionRate: declarationsStats.completionRate,
+          averagePerClient: usersStats.averageDeclarationsPerUser,
+          activeClients: usersStats.totalActiveUsers,
         });
-        setRecentActivity(sortedDeclarations);
+
+        // Mapear la actividad reciente al formato esperado
+        const mappedActivity = recentActivityData.map((item) => ({
+          id: item.id,
+          taxableYear: item.taxableYear,
+          status: item.status,
+          description: item.description,
+          updatedAt: item.updatedAt,
+          userFullName: item.user.fullName,
+        }));
+
+        setRecentActivity(mappedActivity);
       } catch (error) {
         console.error('Error loading dashboard stats:', error);
       } finally {
@@ -92,8 +81,8 @@ export function DashboardPage() {
   const userName = user?.fullName?.split(' ')[0] || 'Usuario';
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="animate-in fade-in slide-in-from-top-4 duration-300">
         <h1 className="text-3xl font-bold tracking-tight">Bienvenido, {userName}</h1>
         <p className="text-muted-foreground">
           Aquí tienes un resumen de tu actividad reciente
@@ -101,31 +90,37 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
-          title="Total Clientes"
-          value={stats.totalClients}
-          icon={Users}
-          trend={stats.clientsThisMonth > 0 ? `+${stats.clientsThisMonth} este mes` : undefined}
-          trendColor="green"
-          colorClass="bg-blue-500"
-        />
-        <StatCard
-          title="Declaraciones Pendientes"
-          value={stats.pendingDeclarations}
-          icon={AlertCircle}
-          colorClass="bg-orange-500"
-        />
-        <StatCard
-          title="Finalizadas Este Mes"
-          value={stats.completedThisMonth}
-          icon={CheckCircle2}
-          trend={stats.completedThisMonth > 0 ? '+12%' : undefined}
-          trendColor="green"
-          colorClass="bg-green-500"
-        />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '100ms' }}>
+          <StatCard
+            title="Total Clientes"
+            value={stats.totalClients}
+            icon={Users}
+            trend={stats.clientsThisMonth > 0 ? `+${stats.clientsThisMonth} este mes` : undefined}
+            trendColor="green"
+            colorClass="bg-blue-500"
+          />
+        </div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '200ms' }}>
+          <StatCard
+            title="Declaraciones Pendientes"
+            value={stats.pendingDeclarations}
+            icon={AlertCircle}
+            colorClass="bg-orange-500"
+          />
+        </div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '300ms' }}>
+          <StatCard
+            title="Finalizadas Este Mes"
+            value={stats.completedThisMonth}
+            icon={CheckCircle2}
+            trend={stats.completedThisMonth > 0 ? '+12%' : undefined}
+            trendColor="green"
+            colorClass="bg-green-500"
+          />
+        </div>
       </div>
 
-      <Card>
+      <Card className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '400ms' }}>
         <CardHeader>
           <CardTitle>Actividad Reciente</CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -139,9 +134,13 @@ export function DashboardPage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {recentActivity.map((declaration) => (
-                <div key={declaration.id} className="flex items-center gap-4 py-2">
-                  <FileTextIcon className="h-5 w-5 text-muted-foreground" />
+              {recentActivity.map((declaration, index) => (
+                <div 
+                  key={declaration.id} 
+                  className="flex items-center gap-4 py-2 transition-colors duration-150 hover:bg-accent/50 rounded-lg px-2 animate-in fade-in slide-in-from-left-4"
+                  style={{ animationDelay: `${(index * 50) + 500}ms` }}
+                >
+                  <FileTextIcon className="h-5 w-5 text-muted-foreground transition-transform duration-200 hover:scale-110" />
                   <div className="flex-1">
                     <p className="font-medium">{declaration.userFullName}</p>
                     <p className="text-sm text-muted-foreground">
@@ -149,10 +148,10 @@ export function DashboardPage() {
                     </p>
                   </div>
                   <Badge
-                    variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
-                    className={declaration.status === 'borrador' ? 'bg-orange-100 text-orange-800' : ''}
+                    variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
+                    className={declaration.status === DeclarationStatus.PENDING ? 'bg-orange-100 text-orange-800' : ''}
                   >
-                    {declaration.status === 'finalizada' ? 'Finalizada' : 'Borrador'}
+                    {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
                   </Badge>
                   <p className="text-sm text-muted-foreground">
                     {formatRelativeDate(declaration.updatedAt)}
@@ -164,31 +163,30 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '500ms' }}>
         <CardHeader>
           <div className="flex items-center gap-2">
             <CardTitle>Estadísticas Rápidas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground transition-transform duration-200 hover:scale-110" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Promedio por cliente</p>
-              <p className="text-2xl font-bold">{stats.averagePerClient} declaraciones</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Tasa de finalización</p>
-              <p className="text-2xl font-bold">{stats.completionRate}%</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total declaraciones</p>
-              <p className="text-2xl font-bold">{stats.totalDeclarations}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Clientes activos</p>
-              <p className="text-2xl font-bold">{stats.activeClients}</p>
-            </div>
+            {[
+              { label: 'Promedio por cliente', value: `${stats.averagePerClient.toFixed(1)} declaraciones` },
+              { label: 'Tasa de finalización', value: `${stats.completionRate}%` },
+              { label: 'Total declaraciones', value: stats.totalDeclarations },
+              { label: 'Clientes activos', value: stats.activeClients },
+            ].map((stat, index) => (
+              <div 
+                key={stat.label}
+                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                style={{ animationDelay: `${(index * 100) + 600}ms` }}
+              >
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -18,9 +18,9 @@ export default function Error({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 transition-transform duration-200 hover:scale-110 animate-in fade-in zoom-in-95 duration-300">
             <AlertCircle className="h-6 w-6 text-destructive" />
           </div>
           <CardTitle className="text-2xl">Algo salió mal</CardTitle>

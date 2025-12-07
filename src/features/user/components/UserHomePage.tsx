@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
+import { DeclarationStatus } from '@/types';
 
 export function UserHomePage() {
   const user = useAuthStore((state) => state.user);
@@ -22,9 +23,12 @@ export function UserHomePage() {
 
       try {
         setLoading(true);
-        const data = await declarationService.getByUserId(user.id);
-        setAllDeclarations(data);
-        setRecentDeclarations(data.slice(0, 3)); // Mostrar solo las 3 más recientes
+        const response = await declarationService.findAllWithPagination(
+          { limit: 3, offset: 0 },
+          user.id
+        );
+        setRecentDeclarations(response.declarations);
+        setAllDeclarations(response.declarations); // Usar los mismos 3 para estadísticas
       } catch (error) {
         console.error('Error loading declarations:', error);
       } finally {
@@ -36,8 +40,8 @@ export function UserHomePage() {
   }, [user?.id]);
 
   const totalCount = allDeclarations.length;
-  const completedCount = allDeclarations.filter((d) => d.status === 'finalizada').length;
-  const inProcessCount = allDeclarations.filter((d) => d.status === 'borrador').length;
+  const completedCount = allDeclarations.filter((d) => d.status === DeclarationStatus.COMPLETED).length;
+  const inProcessCount = allDeclarations.filter((d) => d.status === DeclarationStatus.PENDING).length;
 
   const userName = user?.fullName?.split(' ')[0] || 'Usuario';
 
@@ -51,8 +55,8 @@ export function UserHomePage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="animate-in fade-in slide-in-from-top-4 duration-300">
         <h1 className="text-3xl font-bold tracking-tight">Bienvenido, {userName}</h1>
         <p className="text-muted-foreground">
           Consulta el estado de tus declaraciones de renta
@@ -60,19 +64,19 @@ export function UserHomePage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '100ms' }}>
           <CardContent className="p-6">
             <p className="text-sm font-medium text-muted-foreground mb-2">Total Declaraciones</p>
             <p className="text-3xl font-bold">{totalCount}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '200ms' }}>
           <CardContent className="p-6">
             <p className="text-sm font-medium text-muted-foreground mb-2">Finalizadas</p>
             <p className="text-3xl font-bold">{completedCount}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: '300ms' }}>
           <CardContent className="p-6">
             <p className="text-sm font-medium text-muted-foreground mb-2">En Proceso</p>
             <p className="text-3xl font-bold">{inProcessCount}</p>
@@ -96,22 +100,26 @@ export function UserHomePage() {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
-            {recentDeclarations.map((declaration) => (
-              <Card key={declaration.id}>
+            {recentDeclarations.map((declaration, index) => (
+              <Card 
+                key={declaration.id}
+                className="animate-in fade-in slide-in-from-bottom-4 duration-300"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
                       <FileText className="h-6 w-6 text-blue-600" />
                     </div>
                     <Badge
-                      variant={declaration.status === 'finalizada' ? 'default' : 'secondary'}
+                      variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
                       className={
-                        declaration.status === 'borrador'
+                        declaration.status === DeclarationStatus.PENDING
                           ? 'bg-orange-100 text-orange-800'
                           : 'bg-green-100 text-green-800'
                       }
                     >
-                      {declaration.status === 'finalizada' ? 'Finalizada' : 'En Proceso'}
+                      {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'En Proceso'}
                     </Badge>
                   </div>
                   <h3 className="text-2xl font-bold mb-2">Año {declaration.taxableYear}</h3>
@@ -119,7 +127,7 @@ export function UserHomePage() {
                     <Calendar className="h-4 w-4" />
                     {formatDate(declaration.createdAt)}
                   </div>
-                  <Link href={`/user/declarations/${declaration.id}`}>
+                  <Link href={`/user/declarations/${declaration.id}`} className="transition-transform duration-150 hover:scale-[1.02]">
                     <Button variant="outline" className="w-full">
                       <Eye className="mr-2 h-4 w-4" />
                       Ver Detalle

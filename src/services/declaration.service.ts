@@ -1,10 +1,18 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Declaration } from '@/types';
+import { DeclarationStatus } from '@/types';
+import type { PaginatedResponse } from '@/lib/api/types';
+
+export interface PaginationDto {
+  limit?: number;
+  offset?: number;
+}
 
 export interface CreateDeclarationRequest {
   userId: string;
   taxableYear: number;
+  status: DeclarationStatus;
   description?: string;
 }
 
@@ -14,43 +22,119 @@ export interface UpdateDeclarationRequest {
   filePath?: string;
 }
 
+export interface DeclarationsStats {
+  totalDeclarations: number;
+  totalPending: number;
+  completedThisMonth: number;
+  completionRate: number;
+}
+
+export interface RecentActivityItem {
+  id: string;
+  taxableYear: number;
+  status: string;
+  description: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    fullName: string;
+    documentNumber: string;
+  };
+}
+
+export interface FindAllDeclarationsResponse {
+  declarations: Declaration[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export const declarationService = {
-  async getAll(): Promise<Declaration[]> {
-    return apiClient.get<Declaration[]>(API_ENDPOINTS.declarations.list);
+
+  /**
+   * Obtener todas las declaraciones con paginación (incluye información de paginación)
+   * @param paginationDto - Parámetros de paginación (limit, offset)
+   * @param userId - ID del usuario (opcional) para filtrar por usuario
+   * @returns Objeto con declaraciones e información de paginación
+   */
+  async findAllWithPagination(
+    paginationDto?: PaginationDto,
+    userId?: string
+  ): Promise<FindAllDeclarationsResponse> {
+    const response = await apiClient.get<PaginatedResponse<Declaration>>(
+      API_ENDPOINTS.declarations.findAll({
+        ...paginationDto,
+        userId,
+      })
+    );
+
+    return {
+      declarations: response?.data || [],
+      total: response?.total || 0,
+      limit: response?.limit || 10,
+      offset: response?.offset || 0,
+    };
   },
 
-  async getById(id: string): Promise<Declaration> {
-    return apiClient.get<Declaration>(API_ENDPOINTS.declarations.get(id));
+  /**
+   * Obtener una declaración por ID
+   * @param id - ID de la declaración
+   * @returns Declaración encontrada
+   */
+  async findOne(id: string): Promise<Declaration> {
+    return apiClient.get<Declaration>(API_ENDPOINTS.declarations.findOne(id));
   },
 
-  async getByUserId(userId: string): Promise<Declaration[]> {
-    return apiClient.get<Declaration[]>(API_ENDPOINTS.declarations.getByUser(userId));
+  /**
+   * Obtener estadísticas de declaraciones
+   * @returns Estadísticas de declaraciones
+   */
+  async getStats(): Promise<DeclarationsStats> {
+    return apiClient.get<DeclarationsStats>(API_ENDPOINTS.declarations.stats);
   },
 
+  /**
+   * Obtener actividad reciente de declaraciones
+   * @returns Array de declaraciones con información de usuario
+   */
+  async getRecentActivity(): Promise<RecentActivityItem[]> {
+    return apiClient.get<RecentActivityItem[]>(API_ENDPOINTS.declarations.recentActivity);
+  },
+
+  /**
+   * Crear una nueva declaración
+   * @param data - Datos de la declaración
+   * @returns Declaración creada
+   */
   async create(data: CreateDeclarationRequest): Promise<Declaration> {
-    // Get user to include userFullName
-    const { userService } = await import('./user.service');
-    const user = await userService.getById(data.userId);
-
-    return apiClient.post<Declaration>(API_ENDPOINTS.declarations.create, {
-      ...data,
-      userFullName: user.fullName,
-      status: 'borrador',
-      filePath: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.post<Declaration>(API_ENDPOINTS.declarations.create, data);
   },
 
+  /**
+   * Actualizar una declaración (usa PUT según backend)
+   * @param id - ID de la declaración
+   * @param data - Datos a actualizar
+   * @returns Declaración actualizada
+   */
   async update(id: string, data: UpdateDeclarationRequest): Promise<Declaration> {
-    return apiClient.patch<Declaration>(API_ENDPOINTS.declarations.update(id), {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.put<Declaration>(API_ENDPOINTS.declarations.update(id), data);
   },
 
-  async delete(id: string): Promise<void> {
-    return apiClient.delete<void>(API_ENDPOINTS.declarations.delete(id));
+  /**
+   * Eliminar una declaración
+   * @param id - ID de la declaración
+   */
+  async remove(id: string): Promise<void> {
+    return apiClient.delete<void>(API_ENDPOINTS.declarations.remove(id));
+  },
+
+  /**
+   * Obtener años gravables únicos de un usuario
+   * @param userId - ID del usuario
+   * @returns Array con los años gravables ordenados de forma descendente
+   */
+  async getTaxableYearsByUser(userId: string): Promise<number[]> {
+    return apiClient.get<number[]>(API_ENDPOINTS.declarations.taxableYears(userId));
   },
 };
 

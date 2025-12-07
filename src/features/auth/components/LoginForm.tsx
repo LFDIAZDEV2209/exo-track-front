@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/auth-store';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { authService } from '@/services';
+import { UserRole } from '@/types/user-role.type';
 
 export function LoginForm() {
   const router = useRouter();
@@ -34,28 +35,50 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
+      console.log('[LoginForm] Attempting login with:', { documentNumber: data.cedula });
+      
       const response = await authService.login({
         documentNumber: data.cedula,
         password: data.password,
       });
 
-      // Login successful
-      login(response.user);
+      console.log('[LoginForm] Login successful:', response);
+      console.log('[LoginForm] User role:', response.user.role);
+
+      // Login successful - save user and token
+      login(response.user, response.token);
       toast({
         title: 'Bienvenido',
         description: `Has iniciado sesión como ${response.user.fullName}`,
       });
 
-      // Redirect based on role
-      if (response.user.role === 'admin') {
+      // Redirect based on role - usar el enum UserRole
+      if (response.user.role === UserRole.ADMIN) {
         router.push('/admin/dashboard');
+      } else if (response.user.role === UserRole.USER) {
+        router.push('/user/home');
       } else {
+        // Fallback: si el role no coincide, redirigir según el valor string
+        console.warn('[LoginForm] Unknown role, redirecting to user home:', response.user.role);
         router.push('/user/home');
       }
     } catch (error: any) {
+      console.error('[LoginForm] Login error:', error);
+      console.error('[LoginForm] Error details:', {
+        message: error?.message,
+        status: error?.status,
+        errors: error?.errors,
+        fullError: error,
+      });
+
+      const errorMessage = 
+        error?.message || 
+        error?.errors?.message?.[0] ||
+        'Cédula o contraseña incorrecta';
+
       toast({
         title: 'Error de autenticación',
-        description: error.message || 'Cédula o contraseña incorrecta',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -64,9 +87,17 @@ export function LoginForm() {
   };
 
   return (
-    <CardContent>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
+    <CardContent className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSubmit(onSubmit)(e);
+        }} 
+        className="space-y-4" 
+        noValidate
+      >
+        <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
           <Label htmlFor="cedula">Cédula</Label>
           <Input
             id="cedula"
@@ -76,11 +107,11 @@ export function LoginForm() {
             disabled={isLoading}
           />
           {errors.cedula && (
-            <p className="text-sm text-destructive">{errors.cedula.message}</p>
+            <p className="text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.cedula.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
           <Label htmlFor="password">Contraseña</Label>
           <Input
             id="password"
@@ -90,20 +121,22 @@ export function LoginForm() {
             disabled={isLoading}
           />
           {errors.password && (
-            <p className="text-sm text-destructive">{errors.password.message}</p>
+            <p className="text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.password.message}</p>
           )}
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Iniciando sesión...
-            </>
-          ) : (
-            'Iniciar Sesión'
-          )}
-        </Button>
+        <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '300ms' }}>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Iniciando sesión...
+              </>
+            ) : (
+              'Iniciar Sesión'
+            )}
+          </Button>
+        </div>
       </form>
     </CardContent>
   );

@@ -1,7 +1,6 @@
 // Central export for all services
 export { authService } from './auth.service';
 export { userService } from './user.service';
-export { clientService } from './client.service';
 export { declarationService } from './declaration.service';
 export { incomeService } from './income.service';
 export { assetService } from './asset.service';
