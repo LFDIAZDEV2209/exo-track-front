@@ -61,12 +61,16 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.map((item) => {
+        {data.map((item, index) => {
           const source = normalizeSource(item.source);
           const amount = normalizeAmount(item.amount);
           
           return (
-            <TableRow key={item.id}>
+            <TableRow 
+              key={item.id}
+              className="animate-in fade-in slide-in-from-left-4 transition-colors duration-150 hover:bg-accent/50"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
               <TableCell className="font-medium">{item.concept}</TableCell>
               <TableCell>{formatCurrency(amount)}</TableCell>
               <TableCell>
@@ -82,6 +86,7 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(item.id)}
+                        className="transition-transform duration-150 hover:scale-110"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -91,7 +96,7 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
                         variant="ghost"
                         size="icon"
                         onClick={() => onDelete(item.id)}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive transition-transform duration-150 hover:scale-110"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

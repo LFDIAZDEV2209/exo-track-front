@@ -104,8 +104,8 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
         <Button
           variant="ghost"
           size="icon"
@@ -121,7 +121,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
             Administra las declaraciones de renta del cliente
           </p>
         </div>
-        <Link href={`/admin/customers/${customerId}/declarations/new-declaration`}>
+        <Link href={`/admin/customers/${customerId}/declarations/new-declaration`} className="transition-transform duration-150 hover:scale-[1.02]">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nueva Declaración
@@ -140,8 +140,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {declarations.map((declaration) => (
-              <Card key={declaration.id} className="relative">
+            {declarations.map((declaration, index) => (
+              <Card 
+                key={declaration.id} 
+                className="relative animate-in fade-in slide-in-from-bottom-4 duration-300"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
@@ -166,7 +170,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
                   <p className="text-sm text-muted-foreground mb-4">
                     {declaration.description || 'Sin descripción'}
                   </p>
-                  <Link href={`/admin/customers/${customerId}/declarations/${declaration.id}`}>
+                  <Link href={`/admin/customers/${customerId}/declarations/${declaration.id}`} className="transition-transform duration-150 hover:scale-[1.02]">
                     <Button variant="outline" className="w-full">
                       Ver Detalle
                     </Button>

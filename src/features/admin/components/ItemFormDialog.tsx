@@ -159,9 +159,9 @@ export function ItemFormDialog({
               : `Completa la información para crear un nuevo ${getItemTypeLabel().toLowerCase()}`}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="concept">Concepto</Label>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
+              <Label htmlFor="concept">Concepto</Label>
             <Input
               id="concept"
               {...register('concept')}
@@ -173,7 +173,7 @@ export function ItemFormDialog({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
             <Label htmlFor="amount">Monto</Label>
             <Input
               id="amount"

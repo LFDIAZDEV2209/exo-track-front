@@ -1,18 +1,22 @@
-import { FileText } from 'lucide-react';
-import { CardHeader, CardTitle, CardDescription } from '@/shared/ui/card';
+import { CardHeader, CardTitle } from '@/shared/ui/card';
+import Image from 'next/image';
 
 export function LoginHeader() {
   return (
-    <CardHeader className="space-y-4 text-center">
-      <div className="mx-auto w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-        <FileText className="h-6 w-6 text-primary-foreground" />
+    <CardHeader className="text-center">
+      <div className="mx-auto w-40 h-40 rounded-lg flex items-center justify-center">
+        <Image 
+          src="/logo.png" 
+          alt="Logo ExoTrack" 
+          width={160} 
+          height={160} 
+          className="object-contain" 
+          priority
+        />
       </div>
-      <div>
-        <CardTitle className="text-2xl font-bold">ExoTrack</CardTitle>
-        <CardDescription className="mt-2">
-          Sistema de Gestión de Declaraciones de Renta
-        </CardDescription>
-      </div>
+      <CardTitle className="mt-2">
+        Sistema de Gestión de Declaraciones de Renta
+      </CardTitle>
     </CardHeader>
   );
 }

@@ -126,7 +126,7 @@ export function UserDeclarationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Mis Declaraciones</h1>
         <p className="text-muted-foreground">
@@ -149,8 +149,12 @@ export function UserDeclarationsPage() {
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {declarations.map((declaration) => (
-              <Card key={declaration.id}>
+            {declarations.map((declaration, index) => (
+              <Card 
+                key={declaration.id}
+                className="animate-in fade-in slide-in-from-bottom-4 duration-300"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
@@ -172,7 +176,7 @@ export function UserDeclarationsPage() {
                     <Calendar className="h-4 w-4" />
                     {formatDate(declaration.createdAt)}
                   </div>
-                  <Link href={`/user/declarations/${declaration.id}`}>
+                  <Link href={`/user/declarations/${declaration.id}`} className="transition-transform duration-150 hover:scale-[1.02]">
                     <Button variant="outline" className="w-full">
                       <Eye className="mr-2 h-4 w-4" />
                       Ver Detalle

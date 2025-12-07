@@ -117,13 +117,15 @@ export function NewCustomerPage() {
 
   const handleCloseModal = () => {
     setShowSuccessModal(false);
+    // Marcar que se creó un cliente para recargar datos en CustomersPage
+    sessionStorage.setItem('customerCreated', 'true');
     router.push('/admin/customers');
   };
 
   return (
     <>
-      <div className="space-y-6">
-        <div>
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="animate-in fade-in slide-in-from-top-4 duration-300">
           <h1 className="text-3xl font-bold tracking-tight">Nuevo Cliente</h1>
           <p className="text-muted-foreground">
             Agrega un nuevo cliente al sistema

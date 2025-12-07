@@ -87,7 +87,7 @@ export function LoginForm() {
   };
 
   return (
-    <CardContent>
+    <CardContent className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <form 
         onSubmit={(e) => {
           e.preventDefault();
@@ -97,7 +97,7 @@ export function LoginForm() {
         className="space-y-4" 
         noValidate
       >
-        <div className="space-y-2">
+        <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
           <Label htmlFor="cedula">Cédula</Label>
           <Input
             id="cedula"
@@ -107,11 +107,11 @@ export function LoginForm() {
             disabled={isLoading}
           />
           {errors.cedula && (
-            <p className="text-sm text-destructive">{errors.cedula.message}</p>
+            <p className="text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.cedula.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
           <Label htmlFor="password">Contraseña</Label>
           <Input
             id="password"
@@ -121,20 +121,22 @@ export function LoginForm() {
             disabled={isLoading}
           />
           {errors.password && (
-            <p className="text-sm text-destructive">{errors.password.message}</p>
+            <p className="text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.password.message}</p>
           )}
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Iniciando sesión...
-            </>
-          ) : (
-            'Iniciar Sesión'
-          )}
-        </Button>
+        <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '300ms' }}>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Iniciando sesión...
+              </>
+            ) : (
+              'Iniciar Sesión'
+            )}
+          </Button>
+        </div>
       </form>
     </CardContent>
   );

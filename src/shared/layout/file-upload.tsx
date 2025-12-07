@@ -62,8 +62,8 @@ export function FileUpload({ onFileSelect, accept = '.xlsx,.xls', disabled }: Fi
 
   if (file) {
     return (
-      <div className="flex items-center gap-4 p-4 rounded-lg border bg-muted/50">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+      <div className="flex items-center gap-4 p-4 rounded-lg border bg-muted/50 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-200 hover:scale-110">
           <FileSpreadsheet className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
@@ -90,16 +90,26 @@ export function FileUpload({ onFileSelect, accept = '.xlsx,.xls', disabled }: Fi
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       className={cn(
-        'relative rounded-lg border-2 border-dashed transition-colors',
-        isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
+        'relative rounded-lg border-2 border-dashed transition-all duration-300 ease-in-out',
+        isDragging 
+          ? 'border-primary bg-primary/10 scale-[1.02] shadow-lg' 
+          : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/30',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
       <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-          <Upload className="h-8 w-8 text-muted-foreground" />
+        <div className={cn(
+          "flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4 transition-all duration-300",
+          isDragging && "scale-110 bg-primary/20"
+        )}>
+          <Upload className={cn(
+            "h-8 w-8 text-muted-foreground transition-all duration-300",
+            isDragging && "text-primary scale-110"
+          )} />
         </div>
-        <p className="text-lg font-medium mb-2">Arrastra tu archivo Excel aquí</p>
+        <p className="text-lg font-medium mb-2 transition-colors duration-200">
+          {isDragging ? 'Suelta el archivo aquí' : 'Arrastra tu archivo Excel aquí'}
+        </p>
         <p className="text-sm text-muted-foreground mb-4">
           Formatos soportados: .xlsx, .xls
         </p>
