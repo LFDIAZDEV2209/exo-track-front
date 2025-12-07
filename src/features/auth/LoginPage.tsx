@@ -4,7 +4,6 @@ import { Card } from '@/shared/ui/card';
 import { ThemeToggle } from '@/shared/components/theme-toggle';
 import { LoginHeader } from './components/LoginHeader';
 import { LoginForm } from './components/LoginForm';
-import { LoginCredentials } from './components/LoginCredentials';
 
 export function LoginPage() {
   return (
@@ -16,9 +15,6 @@ export function LoginPage() {
       <Card className="shadow-xl">
         <LoginHeader />
         <LoginForm />
-        <div className="px-6 pb-6">
-          <LoginCredentials />
-        </div>
       </Card>
     </div>
   );

@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
 import type { Declaration } from '@/types';
+import { DeclarationStatus } from '@/types';
 import type { PaginatedResponse } from '@/lib/api/types';
 
 export interface PaginationDto {
@@ -11,6 +12,7 @@ export interface PaginationDto {
 export interface CreateDeclarationRequest {
   userId: string;
   taxableYear: number;
+  status: DeclarationStatus;
   description?: string;
 }
 
@@ -115,10 +117,7 @@ export const declarationService = {
    * @returns Declaración actualizada
    */
   async update(id: string, data: UpdateDeclarationRequest): Promise<Declaration> {
-    return apiClient.put<Declaration>(API_ENDPOINTS.declarations.update(id), {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    return apiClient.put<Declaration>(API_ENDPOINTS.declarations.update(id), data);
   },
 
   /**
@@ -127,6 +126,15 @@ export const declarationService = {
    */
   async remove(id: string): Promise<void> {
     return apiClient.delete<void>(API_ENDPOINTS.declarations.remove(id));
+  },
+
+  /**
+   * Obtener años gravables únicos de un usuario
+   * @param userId - ID del usuario
+   * @returns Array con los años gravables ordenados de forma descendente
+   */
+  async getTaxableYearsByUser(userId: string): Promise<number[]> {
+    return apiClient.get<number[]>(API_ENDPOINTS.declarations.taxableYears(userId));
   },
 };
 

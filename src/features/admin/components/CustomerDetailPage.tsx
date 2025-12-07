@@ -206,7 +206,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
                           size="sm"
                           onClick={() => handlePageChange(page)}
                           disabled={loading}
-                          className="min-w-[40px]"
+                          className="min-w-10"
                         >
                           {page}
                         </Button>

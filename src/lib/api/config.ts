@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
     remove: (id: string) => `/declarations/${id}`,
     stats: '/declarations/stats',
     recentActivity: '/declarations/recent-activity',
+    taxableYears: (userId: string) => `/declarations/taxable-years?userId=${userId}`,
   },
   // Income
   income: {

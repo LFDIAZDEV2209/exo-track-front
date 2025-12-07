@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Textarea } from '@/shared/ui/textarea';
-import { ArrowLeft, Plus, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { declarationService, incomeService, assetService, liabilityService, userService } from '@/services';
 import { formatCurrency } from '@/lib/utils';
@@ -15,6 +15,16 @@ import { useToast } from '@/hooks/use-toast';
 import { DeclarationStatus, DataSource } from '@/types';
 import { ItemFormDialog } from './ItemFormDialog';
 import { DeleteItemDialog } from './DeleteItemDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shared/ui/alert-dialog';
 
 interface DeclarationDetailAdminPageProps {
   declarationId: string;
@@ -54,6 +64,8 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
   const [allLiabilities, setAllLiabilities] = useState<any[]>([]);
   
   const [observations, setObservations] = useState('');
+  const [deleteDeclarationDialogOpen, setDeleteDeclarationDialogOpen] = useState(false);
+  const [isDeletingDeclaration, setIsDeletingDeclaration] = useState(false);
 
   // Estados para diálogos de assets
   const [assetFormOpen, setAssetFormOpen] = useState(false);
@@ -252,6 +264,32 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         description: errorMessage,
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDeleteDeclaration = async () => {
+    try {
+      setIsDeletingDeclaration(true);
+      await declarationService.remove(declarationId);
+      
+      toast({
+        title: 'Declaración eliminada',
+        description: 'La declaración ha sido eliminada exitosamente',
+      });
+
+      router.push(`/admin/customers/${customerId}`);
+    } catch (error: any) {
+      const errorMessage = Array.isArray(error?.message) 
+        ? error.message[0] 
+        : error?.message || 'Error al eliminar la declaración';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingDeclaration(false);
+      setDeleteDeclarationDialogOpen(false);
     }
   };
 
@@ -575,7 +613,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
                     variant={currentPage === page ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => onPageChange(page)}
-                    className="min-w-[40px]"
+                    className="min-w-10"
                   >
                     {page}
                   </Button>
@@ -638,6 +676,13 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
               Finalizar Declaración
             </Button>
           )}
+          <Button
+            variant="destructive"
+            onClick={() => setDeleteDeclarationDialogOpen(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Eliminar Declaración
+          </Button>
         </div>
       </div>
 
@@ -875,6 +920,37 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
           deleteService={liabilityService.remove}
         />
       )}
+
+      {/* Diálogo de confirmación para eliminar declaración */}
+      <AlertDialog open={deleteDeclarationDialogOpen} onOpenChange={setDeleteDeclarationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente la declaración del año{' '}
+              <strong>{declaration.taxableYear}</strong> para el cliente{' '}
+              <strong>{client?.fullName || 'el cliente'}</strong>, incluyendo todos los patrimonios, ingresos y deudas asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingDeclaration}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteDeclaration}
+              disabled={isDeletingDeclaration}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingDeclaration ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
