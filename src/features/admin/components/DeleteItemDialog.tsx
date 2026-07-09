@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TriangleAlert, Trash2 } from 'lucide-react';
 
 interface DeleteItemDialogProps {
   open: boolean;
@@ -82,18 +82,25 @@ export function DeleteItemDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción no se puede deshacer. Esto eliminará permanentemente el {getItemTypeLabel()}{' '}
-            <strong>{itemConcept}</strong>.
-          </AlertDialogDescription>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+              <TriangleAlert className="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <AlertDialogTitle className="font-bold">¿Estás seguro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción no se puede deshacer. Esto eliminará permanentemente el {getItemTypeLabel()}{' '}
+                <strong>{itemConcept}</strong>.
+              </AlertDialogDescription>
+            </div>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-red-600 hover:bg-red-700 text-white font-bold"
           >
             {isDeleting ? (
               <>
@@ -101,7 +108,10 @@ export function DeleteItemDialog({
                 Eliminando...
               </>
             ) : (
-              'Eliminar'
+              <>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar
+              </>
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -109,4 +119,3 @@ export function DeleteItemDialog({
     </AlertDialog>
   );
 }
-

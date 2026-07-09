@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { ArrowLeft, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardTitle } from '@/shared/ui/card';
+import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, Building2, TrendingUp, CreditCard, MessageSquare } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { declarationService, incomeService, assetService, liabilityService } from '@/services';
@@ -263,10 +263,10 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
                 return (
                   <Button
                     key={page}
-                    variant={currentPage === page ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => onPageChange(page)}
-                    className="min-w-10"
+                    className={currentPage === page ? "min-w-10 bg-emerald-500 text-white hover:bg-emerald-600" : "min-w-10"}
                   >
                     {page}
                   </Button>
@@ -298,107 +298,115 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
+        <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-emerald-400 rounded-full" />
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Declaración {declaration.taxableYear}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Declaración {declaration.taxableYear}</h1>
+          <p className="text-muted-foreground">Revisa los datos de tu declaración de renta</p>
         </div>
       </div>
 
       <Tabs defaultValue="assets" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="assets">Patrimonios</TabsTrigger>
-          <TabsTrigger value="incomes">Ingresos</TabsTrigger>
-          <TabsTrigger value="liabilities">Deudas</TabsTrigger>
+        <TabsList className="bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="assets" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
+            <Building2 className="h-4 w-4 mr-2" /> Patrimonios
+          </TabsTrigger>
+          <TabsTrigger value="incomes" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
+            <TrendingUp className="h-4 w-4 mr-2" /> Ingresos
+          </TabsTrigger>
+          <TabsTrigger value="liabilities" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
+            <CreditCard className="h-4 w-4 mr-2" /> Deudas
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="assets" className="space-y-4">
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+            <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Patrimonios</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Total: {formatCurrency(totalAssets)}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-white" />
+                  <CardTitle className="font-bold text-white">Patrimonios</CardTitle>
                 </div>
+                <span className="text-sm font-bold text-white">Total: {formatCurrency(totalAssets)}</span>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-0">
               <DataTable data={assets} readOnly />
-              <PaginationControls
-                currentPage={assetsPage}
-                totalPages={assetsTotalPages}
-                total={assetsTotal}
-                onPageChange={handleAssetsPageChange}
-              />
+              <div className="px-6 pb-4">
+                <PaginationControls
+                  currentPage={assetsPage}
+                  totalPages={assetsTotalPages}
+                  total={assetsTotal}
+                  onPageChange={handleAssetsPageChange}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="incomes" className="space-y-4">
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+            <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Ingresos</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Total: {formatCurrency(totalIncomes)}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-white" />
+                  <CardTitle className="font-bold text-white">Ingresos</CardTitle>
                 </div>
+                <span className="text-sm font-bold text-white">Total: {formatCurrency(totalIncomes)}</span>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-0">
               <DataTable data={incomes} readOnly />
-              <PaginationControls
-                currentPage={incomesPage}
-                totalPages={incomesTotalPages}
-                total={incomesTotal}
-                onPageChange={handleIncomesPageChange}
-              />
+              <div className="px-6 pb-4">
+                <PaginationControls
+                  currentPage={incomesPage}
+                  totalPages={incomesTotalPages}
+                  total={incomesTotal}
+                  onPageChange={handleIncomesPageChange}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="liabilities" className="space-y-4">
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+            <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Deudas</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Total: {formatCurrency(totalLiabilities)}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-white" />
+                  <CardTitle className="font-bold text-white">Deudas</CardTitle>
                 </div>
+                <span className="text-sm font-bold text-white">Total: {formatCurrency(totalLiabilities)}</span>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-0">
               <DataTable data={liabilities} readOnly />
-              <PaginationControls
-                currentPage={liabilitiesPage}
-                totalPages={liabilitiesTotalPages}
-                total={liabilitiesTotal}
-                onPageChange={handleLiabilitiesPageChange}
-              />
+              <div className="px-6 pb-4">
+                <PaginationControls
+                  currentPage={liabilitiesPage}
+                  totalPages={liabilitiesTotalPages}
+                  total={liabilitiesTotal}
+                  onPageChange={handleLiabilitiesPageChange}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
       {declaration.description && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Observaciones del Contador</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+        <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+          <div className="bg-emerald-600 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-white" />
+              <CardTitle className="font-bold text-white">Observaciones del Contador</CardTitle>
+            </div>
+          </div>
+          <CardContent className="p-0">
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap px-6 py-4">
               {declaration.description}
             </p>
           </CardContent>

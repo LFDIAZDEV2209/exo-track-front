@@ -1,6 +1,6 @@
 export const API_CONFIG = {
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
-  useMockAPI: process.env.NEXT_PUBLIC_USE_MOCK_API === 'true',
+  useMockAPI: process.env.NEXT_PUBLIC_USE_MOCK_API === 'false' ? false : true,
   timeout: 10000,
 };
 

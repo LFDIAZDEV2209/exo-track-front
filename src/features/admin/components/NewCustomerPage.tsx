@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -19,7 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { clientSchema, type ClientFormData } from '@/lib/validations';
 import { authService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle2, Copy, Check } from 'lucide-react';
+import { Loader2, CheckCircle2, Copy, Check, UserPlus, User, IdCard, Mail, Phone, Lock, Key } from 'lucide-react';
 
 /**
  * Genera una contraseña automática basada en las dos primeras letras del nombre y la cédula
@@ -125,93 +125,114 @@ export function NewCustomerPage() {
   return (
     <>
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-          <h1 className="text-3xl font-bold tracking-tight">Nuevo Cliente</h1>
-          <p className="text-muted-foreground">
-            Agrega un nuevo cliente al sistema
-          </p>
+        <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-500/20">
+            <UserPlus className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold tracking-tight">Nuevo Cliente</h1>
+            <p className="text-sm text-muted-foreground">Agrega un nuevo cliente al sistema</p>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Información del Cliente</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+          <div className="bg-emerald-600 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-white" />
+              <CardTitle className="font-bold text-white">Información del Cliente</CardTitle>
+            </div>
+          </div>
+          <CardContent className="p-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Nombre Completo</Label>
+                <Label htmlFor="fullName" className="font-bold flex items-center gap-1.5">
+                  <User className="h-4 w-4 text-emerald-500" /> Nombre Completo
+                </Label>
                 <Input
                   id="fullName"
                   placeholder="Nombre completo"
                   {...register('fullName')}
                   disabled={isLoading}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 />
                 {errors.fullName && (
-                  <p className="text-sm text-destructive">{errors.fullName.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.fullName.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="documentNumber">Cédula</Label>
+                <Label htmlFor="documentNumber" className="font-bold flex items-center gap-1.5">
+                  <IdCard className="h-4 w-4 text-emerald-500" /> Cédula
+                </Label>
                 <Input
                   id="documentNumber"
                   placeholder="Número de cédula"
                   {...register('documentNumber')}
                   disabled={isLoading}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 />
                 {errors.documentNumber && (
-                  <p className="text-sm text-destructive">{errors.documentNumber.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.documentNumber.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="font-bold flex items-center gap-1.5">
+                  <Mail className="h-4 w-4 text-emerald-500" /> Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="email@ejemplo.com"
                   {...register('email')}
                   disabled={isLoading}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 />
                 {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.email.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Teléfono</Label>
+                <Label htmlFor="phoneNumber" className="font-bold flex items-center gap-1.5">
+                  <Phone className="h-4 w-4 text-emerald-500" /> Teléfono
+                </Label>
                 <Input
                   id="phoneNumber"
                   placeholder="Número de teléfono"
                   {...register('phoneNumber')}
                   disabled={isLoading}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 />
                 {errors.phoneNumber && (
-                  <p className="text-sm text-destructive">{errors.phoneNumber.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.phoneNumber.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña (Opcional)</Label>
+                <Label htmlFor="password" className="font-bold flex items-center gap-1.5">
+                  <Lock className="h-4 w-4 text-emerald-500" /> Contraseña (Opcional)
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   {...register('password')}
                   disabled={isLoading}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 />
                 {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.password.message}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground italic">
                   Si no se proporciona, se generará automáticamente con las dos primeras letras del nombre + cédula
                 </p>
               </div>
               <div className="flex gap-4">
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="bg-emerald-500 hover:bg-emerald-600 text-white">
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creando...
                     </>
                   ) : (
-                    'Crear Cliente'
+                    <><UserPlus className="mr-2 h-4 w-4" /> Crear Cliente</>
                   )}
                 </Button>
                 <Button
@@ -232,18 +253,20 @@ export function NewCustomerPage() {
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
-              <DialogTitle>Cliente creado exitosamente</DialogTitle>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+                <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <DialogTitle className="font-bold">Cliente creado exitosamente</DialogTitle>
+                <DialogDescription>Guarda estas credenciales para enviarlas al usuario.</DialogDescription>
+              </div>
             </div>
-            <DialogDescription>
-              El cliente ha sido creado. Guarda estas credenciales para enviarlas al usuario.
-            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Cédula</Label>
+              <Label className="text-sm font-bold flex items-center gap-1.5"><IdCard className="h-4 w-4 text-emerald-500" /> Cédula</Label>
               <div className="flex items-center gap-2">
                 <Input
                   value={createdCredentials?.documentNumber || ''}
@@ -255,10 +278,9 @@ export function NewCustomerPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => copyToClipboard(createdCredentials?.documentNumber || '', 'document')}
-                  title="Copiar cédula"
                 >
                   {copiedField === 'document' ? (
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-emerald-600" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
@@ -267,7 +289,7 @@ export function NewCustomerPage() {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Contraseña</Label>
+              <Label className="text-sm font-bold flex items-center gap-1.5"><Key className="h-4 w-4 text-amber-500" /> Contraseña</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="text"
@@ -280,10 +302,9 @@ export function NewCustomerPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => copyToClipboard(createdCredentials?.password || '', 'password')}
-                  title="Copiar contraseña"
                 >
                   {copiedField === 'password' ? (
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-emerald-600" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
@@ -293,9 +314,7 @@ export function NewCustomerPage() {
           </div>
 
           <DialogFooter>
-            <Button onClick={handleCloseModal} className="w-full">
-              Continuar
-            </Button>
+            <Button onClick={handleCloseModal} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">Continuar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -11,7 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { clientSchema, type ClientFormData } from '@/lib/validations';
 import { userService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, UserCog, Save, XCircle, User, IdCard, Mail, Phone, Lock } from 'lucide-react';
 
 interface EditCustomerPageProps {
   customerId: string;
@@ -134,94 +134,113 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-500/20">
+          <UserCog className="h-5 w-5" />
+        </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Editar Cliente</h1>
-          <p className="text-muted-foreground">
-            Modifica la información del cliente
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Editar Cliente</h1>
+          <p className="text-sm text-muted-foreground">Modifica la información del cliente</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Información del Cliente</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+        <div className="bg-emerald-600 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <UserCog className="h-5 w-5 text-white" />
+            <CardTitle className="font-bold text-white">Información del Cliente</CardTitle>
+          </div>
+        </div>
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Nombre Completo</Label>
+              <Label htmlFor="fullName" className="font-bold flex items-center gap-1.5">
+                <User className="h-4 w-4 text-emerald-500" /> Nombre Completo
+              </Label>
               <Input
                 id="fullName"
                 placeholder="Nombre completo"
                 {...register('fullName')}
                 disabled={isLoading}
+                className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
               />
               {errors.fullName && (
-                <p className="text-sm text-destructive">{errors.fullName.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.fullName.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="documentNumber">Cédula</Label>
+              <Label htmlFor="documentNumber" className="font-bold flex items-center gap-1.5">
+                <IdCard className="h-4 w-4 text-emerald-500" /> Cédula
+              </Label>
               <Input
                 id="documentNumber"
                 placeholder="Número de cédula"
                 {...register('documentNumber')}
-                disabled={isLoading}
+                disabled
+                className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
               />
               {errors.documentNumber && (
-                <p className="text-sm text-destructive">{errors.documentNumber.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.documentNumber.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="font-bold flex items-center gap-1.5">
+                <Mail className="h-4 w-4 text-emerald-500" /> Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="email@ejemplo.com"
                 {...register('email')}
                 disabled={isLoading}
+                className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.email.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Teléfono</Label>
+              <Label htmlFor="phoneNumber" className="font-bold flex items-center gap-1.5">
+                <Phone className="h-4 w-4 text-emerald-500" /> Teléfono
+              </Label>
               <Input
                 id="phoneNumber"
                 placeholder="Número de teléfono"
                 {...register('phoneNumber')}
                 disabled={isLoading}
+                className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
               />
               {errors.phoneNumber && (
-                <p className="text-sm text-destructive">{errors.phoneNumber.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.phoneNumber.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Nueva Contraseña (Opcional)</Label>
+              <Label htmlFor="password" className="font-bold flex items-center gap-1.5">
+                <Lock className="h-4 w-4 text-emerald-500" /> Nueva Contraseña (Opcional)
+              </Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="Dejar vacío para mantener la actual"
                 {...register('password')}
                 disabled={isLoading}
+                className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
               />
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.password.message}</p>
               )}
               <p className="text-xs text-muted-foreground">
                 Solo completa este campo si deseas cambiar la contraseña del cliente
               </p>
             </div>
             <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-emerald-500 hover:bg-emerald-600 text-white">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
                   </>
                 ) : (
-                  'Guardar Cambios'
+                  <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</>
                 )}
               </Button>
               <Button
@@ -229,8 +248,9 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
                 variant="outline"
                 onClick={() => router.back()}
                 disabled={isLoading}
+                className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50"
               >
-                Cancelar
+                <XCircle className="mr-2 h-4 w-4" /> Cancelar
               </Button>
             </div>
           </form>

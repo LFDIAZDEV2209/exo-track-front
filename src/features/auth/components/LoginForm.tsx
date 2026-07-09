@@ -4,12 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { ZodType } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
-import { CardContent } from '@/shared/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/auth-store';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
@@ -21,61 +19,39 @@ export function LoginForm() {
   const { toast } = useToast();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>({
-    // @ts-ignore - Type compatibility issue between zod and react-hook-form
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-
     try {
-      console.log('[LoginForm] Attempting login with:', { documentNumber: data.cedula });
-      
       const response = await authService.login({
         documentNumber: data.cedula,
         password: data.password,
       });
 
-      console.log('[LoginForm] Login successful:', response);
-      console.log('[LoginForm] User role:', response.user.role);
-
-      // Login successful - save user and token
       login(response.user, response.token);
       toast({
         title: 'Bienvenido',
         description: `Has iniciado sesión como ${response.user.fullName}`,
       });
 
-      // Redirect based on role - usar el enum UserRole
       if (response.user.role === UserRole.ADMIN) {
         router.push('/admin/dashboard');
-      } else if (response.user.role === UserRole.USER) {
-        router.push('/user/home');
       } else {
-        // Fallback: si el role no coincide, redirigir según el valor string
-        console.warn('[LoginForm] Unknown role, redirecting to user home:', response.user.role);
         router.push('/user/home');
       }
-    } catch (error: any) {
-      console.error('[LoginForm] Login error:', error);
-      console.error('[LoginForm] Error details:', {
-        message: error?.message,
-        status: error?.status,
-        errors: error?.errors,
-        fullError: error,
-      });
-
-      const errorMessage = 
-        error?.message || 
-        error?.errors?.message?.[0] ||
-        'Cédula o contraseña incorrecta';
-
+    } catch (error: unknown) {
+      const err = error as { message?: string; errors?: { message?: string[] }; status?: number };
+      const errorMessage =
+        err?.message || err?.errors?.message?.[0] || 'Cédula o contraseña incorrecta';
       toast({
         title: 'Error de autenticación',
         description: errorMessage,
@@ -87,58 +63,81 @@ export function LoginForm() {
   };
 
   return (
-    <CardContent className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <form 
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleSubmit(onSubmit)(e);
-        }} 
-        className="space-y-4" 
-        noValidate
-      >
-        <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
-          <Label htmlFor="cedula">Cédula</Label>
-          <Input
-            id="cedula"
-            placeholder="Ingresa tu cédula"
-            {...register('cedula')}
-            autoFocus
-            disabled={isLoading}
-          />
-          {errors.cedula && (
-            <p className="text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.cedula.message}</p>
-          )}
-        </div>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSubmit(onSubmit)(e);
+      }}
+      className="space-y-5"
+      noValidate
+    >
+      <div className="space-y-2">
+        <Label htmlFor="cedula" className="text-sm font-medium">
+          Cédula
+        </Label>
+        <Input
+          id="cedula"
+          placeholder="Ingresa tu número de cédula"
+          {...register('cedula')}
+          autoFocus
+          disabled={isLoading}
+          className="h-11 bg-muted/30 border-border/50 focus-visible:bg-background transition-all"
+        />
+        {errors.cedula && (
+          <p className="text-xs text-destructive animate-fade-in-up">
+            {errors.cedula.message}
+          </p>
+        )}
+      </div>
 
-        <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
-          <Label htmlFor="password">Contraseña</Label>
+      <div className="space-y-2">
+        <Label htmlFor="password" className="text-sm font-medium">
+          Contraseña
+        </Label>
+        <div className="relative">
           <Input
             id="password"
-            type="password"
-            placeholder="••••••••"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Ingresa tu contraseña"
             {...register('password')}
             disabled={isLoading}
+            className="h-11 bg-muted/30 border-border/50 focus-visible:bg-background transition-all pr-10"
           />
-          {errors.password && (
-            <p className="text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.password.message}</p>
-          )}
-        </div>
-
-        <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '300ms' }}>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Iniciando sesión...
-              </>
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
+            tabIndex={-1}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
             ) : (
-              'Iniciar Sesión'
+              <Eye className="h-4 w-4" />
             )}
-          </Button>
+          </button>
         </div>
-      </form>
-    </CardContent>
+        {errors.password && (
+          <p className="text-xs text-destructive animate-fade-in-up">
+            {errors.password.message}
+          </p>
+        )}
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full h-11 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Iniciando sesión...
+          </>
+        ) : (
+          'Iniciar Sesión'
+        )}
+      </Button>
+    </form>
   );
 }
-

@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Textarea } from '@/shared/ui/textarea';
-import { ArrowLeft, Plus, Loader2, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, ChevronLeft, ChevronRight, Trash2, Building2, TrendingUp, CreditCard, MessageSquare, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { declarationService, incomeService, assetService, liabilityService, userService } from '@/services';
 import { formatCurrency } from '@/lib/utils';
@@ -610,10 +610,10 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
                 return (
                   <Button
                     key={page}
-                    variant={currentPage === page ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => onPageChange(page)}
-                    className="min-w-10"
+                    className={`min-w-10 ${currentPage === page ? 'bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500' : 'border border-input bg-background'}`}
                   >
                     {page}
                   </Button>
@@ -652,6 +652,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+        <div className="w-1.5 h-12 bg-gradient-to-b from-emerald-400 to-emerald-600 rounded-full" />
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">
             Declaración {declaration.taxableYear} - {client?.fullName || 'Cliente'}
@@ -665,8 +666,8 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
             variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
             className={
               declaration.status === DeclarationStatus.PENDING
-                ? 'bg-orange-100 text-orange-800'
-                : 'bg-green-100 text-green-800'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-emerald-100 text-emerald-800'
             }
           >
             {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
@@ -687,29 +688,35 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
       </div>
 
       <Tabs defaultValue="assets" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="assets">Patrimonios</TabsTrigger>
-          <TabsTrigger value="incomes">Ingresos</TabsTrigger>
-          <TabsTrigger value="liabilities">Deudas</TabsTrigger>
+        <TabsList className="bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="assets" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
+            <Building2 className="h-4 w-4 mr-2" /> Patrimonios
+          </TabsTrigger>
+          <TabsTrigger value="incomes" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
+            <TrendingUp className="h-4 w-4 mr-2" /> Ingresos
+          </TabsTrigger>
+          <TabsTrigger value="liabilities" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
+            <CreditCard className="h-4 w-4 mr-2" /> Deudas
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="assets" className="space-y-4">
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+            <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Patrimonios</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Total: {formatCurrency(totalAssets)}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-white" />
+                  <CardTitle className="font-bold text-white">Patrimonios</CardTitle>
                 </div>
-                <Button onClick={handleCreateAsset}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar
-                </Button>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-white">Total: {formatCurrency(totalAssets)}</span>
+                  <Button onClick={handleCreateAsset} size="sm" className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold">
+                    <Plus className="mr-1 h-4 w-4" /> Agregar
+                  </Button>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-0">
               <DataTable
                 data={assets}
                 onEdit={handleEditAsset}
@@ -726,22 +733,22 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsContent>
 
         <TabsContent value="incomes" className="space-y-4">
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+            <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Ingresos</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Total: {formatCurrency(totalIncomes)}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-white" />
+                  <CardTitle className="font-bold text-white">Ingresos</CardTitle>
                 </div>
-                <Button onClick={handleCreateIncome}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar
-                </Button>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-white">Total: {formatCurrency(totalIncomes)}</span>
+                  <Button onClick={handleCreateIncome} size="sm" className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold">
+                    <Plus className="mr-1 h-4 w-4" /> Agregar
+                  </Button>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-0">
               <DataTable
                 data={incomes}
                 onEdit={handleEditIncome}
@@ -758,22 +765,22 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsContent>
 
         <TabsContent value="liabilities" className="space-y-4">
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+            <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Deudas</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Total: {formatCurrency(totalLiabilities)}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-white" />
+                  <CardTitle className="font-bold text-white">Deudas</CardTitle>
                 </div>
-                <Button onClick={handleCreateLiability}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar
-                </Button>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-white">Total: {formatCurrency(totalLiabilities)}</span>
+                  <Button onClick={handleCreateLiability} size="sm" className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold">
+                    <Plus className="mr-1 h-4 w-4" /> Agregar
+                  </Button>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-0">
               <DataTable
                 data={liabilities}
                 onEdit={handleEditLiability}
@@ -790,18 +797,21 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsContent>
       </Tabs>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Observaciones del Contador</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+        <div className="bg-emerald-600 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-white" />
+            <CardTitle className="font-bold text-white">Observaciones del Contador</CardTitle>
+          </div>
+        </div>
+        <CardContent className="p-6 space-y-4">
           <Textarea
             value={observations}
             onChange={(e) => setObservations(e.target.value)}
             placeholder="Notas y comentarios"
             rows={4}
           />
-          <Button onClick={handleUpdateObservations}>
+          <Button onClick={handleUpdateObservations} className="bg-emerald-500 hover:bg-emerald-600 text-white">
             Guardar Observaciones
           </Button>
         </CardContent>
@@ -925,7 +935,10 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
       <AlertDialog open={deleteDeclarationDialogOpen} onOpenChange={setDeleteDeclarationDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <TriangleAlert className="h-5 w-5 text-destructive" />
+              ¿Estás seguro?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente la declaración del año{' '}
               <strong>{declaration.taxableYear}</strong> para el cliente{' '}
@@ -954,4 +967,3 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
     </div>
   );
 }
-

@@ -15,7 +15,7 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Building2, TrendingUp, CreditCard, FileText, DollarSign, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const itemSchema = z.object({
@@ -150,23 +150,36 @@ export function ItemFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {editingItem ? `Editar ${getItemTypeLabel()}` : `Nuevo ${getItemTypeLabel()}`}
-          </DialogTitle>
-          <DialogDescription>
-            {editingItem
-              ? `Modifica la información del ${getItemTypeLabel().toLowerCase()}`
-              : `Completa la información para crear un nuevo ${getItemTypeLabel().toLowerCase()}`}
-          </DialogDescription>
+          <div className="bg-emerald-600 -mx-6 -mt-6 px-6 py-4 border-b rounded-t-lg">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+                {itemType === 'asset' && <Building2 className="h-5 w-5 text-white" />}
+                {itemType === 'income' && <TrendingUp className="h-5 w-5 text-white" />}
+                {itemType === 'liability' && <CreditCard className="h-5 w-5 text-white" />}
+              </div>
+              <div>
+                <DialogTitle className="font-bold text-white">
+                  {editingItem ? `Editar ${getItemTypeLabel()}` : `Nuevo ${getItemTypeLabel()}`}
+                </DialogTitle>
+                <DialogDescription className="text-emerald-100">
+                  {editingItem ? `Modifica la información del ${getItemTypeLabel().toLowerCase()}` : `Completa la información para crear un nuevo ${getItemTypeLabel().toLowerCase()}`}
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
         </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
-              <Label htmlFor="concept">Concepto</Label>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
+            <Label htmlFor="concept" className="flex items-center gap-2 font-bold">
+              <FileText className="h-4 w-4 text-emerald-500" />
+              Concepto
+            </Label>
             <Input
               id="concept"
               {...register('concept')}
               placeholder="Ej: Préstamo hipotecario"
               disabled={isLoading}
+              className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
             />
             {errors.concept && (
               <p className="text-sm text-destructive">{errors.concept.message}</p>
@@ -174,7 +187,10 @@ export function ItemFormDialog({
           </div>
 
           <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
-            <Label htmlFor="amount">Monto</Label>
+            <Label htmlFor="amount" className="flex items-center gap-2 font-bold">
+              <DollarSign className="h-4 w-4 text-emerald-500" />
+              Monto
+            </Label>
             <Input
               id="amount"
               type="number"
@@ -183,6 +199,7 @@ export function ItemFormDialog({
               {...register('amount')}
               placeholder="0.00"
               disabled={isLoading}
+              className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
             />
             {errors.amount && (
               <p className="text-sm text-destructive">{errors.amount.message}</p>
@@ -198,14 +215,21 @@ export function ItemFormDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {editingItem ? 'Actualizando...' : 'Creando...'}
                 </>
               ) : (
-                editingItem ? 'Actualizar' : 'Crear'
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {editingItem ? 'Actualizar' : 'Crear'}
+                </>
               )}
             </Button>
           </DialogFooter>
@@ -214,4 +238,3 @@ export function ItemFormDialog({
     </Dialog>
   );
 }
-

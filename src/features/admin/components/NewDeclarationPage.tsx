@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Label } from '@/shared/ui/label';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,7 @@ import { declarationSchema, type DeclarationFormData } from '@/lib/validations';
 import { declarationService, userService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
 import { DeclarationStatus } from '@/types';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, FilePlus, Info, Calendar, Upload, FileUp, XCircle } from 'lucide-react';
 import { FileUpload } from '@/shared/layout/file-upload';
 import {
   Select,
@@ -141,25 +141,33 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-500/20">
+          <FilePlus className="h-5 w-5" />
+        </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Nueva Declaración</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight">Nueva Declaración</h1>
+          <p className="text-sm text-muted-foreground">
             Crea una declaración de renta para {client?.fullName || 'el cliente'}
           </p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Información de la Declaración</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-6">
-            Selecciona el año y elige crear con archivo exógeno o crear una declaración vacía
+      <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+        <div className="bg-emerald-600 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <FilePlus className="h-5 w-5 text-white" />
+            <CardTitle className="font-bold text-white">Información de la Declaración</CardTitle>
+          </div>
+        </div>
+        <CardContent className="p-6">
+          <p className="text-sm text-muted-foreground mb-6 flex items-center gap-2">
+            <Info className="h-4 w-4 text-emerald-500" /> Selecciona el año y elige cómo crear la declaración
           </p>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="taxableYear">Año de la Declaración</Label>
+              <Label htmlFor="taxableYear" className="flex items-center gap-2 font-bold">
+                <Calendar className="h-4 w-4 text-emerald-500" /> Año de la Declaración
+              </Label>
               <Controller
                 name="taxableYear"
                 control={control}
@@ -169,7 +177,7 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
                     value={field.value?.toString()}
                     disabled={isLoading}
                   >
-                    <SelectTrigger id="taxableYear" className="w-full">
+                    <SelectTrigger id="taxableYear" className="w-full transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20">
                       <SelectValue placeholder="Selecciona un año" />
                     </SelectTrigger>
                     <SelectContent>
@@ -191,7 +199,9 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Archivo del Exógeno DIAN (Opcional)</Label>
+              <Label className="flex items-center gap-2 font-bold">
+                <Upload className="h-4 w-4 text-emerald-500" /> Archivo del Exógeno DIAN (Opcional)
+              </Label>
               <FileUpload
                 onFileSelect={setSelectedFile}
                 accept=".xlsx,.xls"
@@ -203,9 +213,10 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
             </div>
 
             <div className="flex gap-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading || !selectedYear || !selectedFile}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
               >
                 {isLoading ? (
                   <>
@@ -213,7 +224,10 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
                     Procesando...
                   </>
                 ) : (
-                  'Procesar y Crear'
+                  <>
+                    <FileUp className="mr-2 h-4 w-4" />
+                    Procesar y Crear
+                  </>
                 )}
               </Button>
               <Button
@@ -221,6 +235,7 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
                 variant="outline"
                 onClick={onCreateEmpty}
                 disabled={isLoading || !selectedYear || !!selectedFile}
+                className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 font-bold"
               >
                 {isLoading ? (
                   <>
@@ -228,7 +243,10 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
                     Creando...
                   </>
                 ) : (
-                  'Crear Declaración Vacía'
+                  <>
+                    <FilePlus className="mr-2 h-4 w-4" />
+                    Crear Declaración Vacía
+                  </>
                 )}
               </Button>
               <Button
@@ -237,6 +255,7 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
                 onClick={() => router.back()}
                 disabled={isLoading}
               >
+                <XCircle className="mr-2 h-4 w-4" />
                 Cancelar
               </Button>
             </div>

@@ -1,15 +1,18 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/shared/components/theme-provider';
 import { Toaster } from '@/shared/ui/toaster';
 
-const inter = Inter({ subsets: ['latin'] });
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+});
 
 export const metadata: Metadata = {
-  title: 'ExoTrack - Gestión de Declaraciones de Renta',
-  description: 'Sistema profesional para contadores en Colombia',
-    generator: 'v0.app'
+  title: 'ExoTrack — Gestión de Declaraciones de Renta',
+  description: 'Plataforma profesional para la gestión y administración de declaraciones de renta en Colombia',
+  keywords: ['declaraciones de renta', 'contadores', 'Colombia', 'DIAN', 'impuestos'],
 };
 
 export default function RootLayout({
@@ -19,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${outfit.variable} font-sans`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
