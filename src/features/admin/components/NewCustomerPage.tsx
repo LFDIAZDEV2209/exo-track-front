@@ -51,14 +51,11 @@ export function NewCustomerPage() {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<ClientFormData>({
-    // @ts-ignore
     resolver: zodResolver(clientSchema),
   });
 
-  const fullName = watch('fullName');
-  const documentNumber = watch('documentNumber');
+
 
   const copyToClipboard = async (text: string, field: 'document' | 'password') => {
     try {
@@ -69,7 +66,7 @@ export function NewCustomerPage() {
         description: `${field === 'document' ? 'Cédula' : 'Contraseña'} copiada al portapapeles`,
       });
       setTimeout(() => setCopiedField(null), 2000);
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'No se pudo copiar al portapapeles',

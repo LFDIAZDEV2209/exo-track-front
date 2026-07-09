@@ -29,7 +29,6 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
     formState: { errors },
     reset,
   } = useForm<ClientFormData>({
-    // @ts-ignore
     resolver: zodResolver(clientSchema),
   });
 

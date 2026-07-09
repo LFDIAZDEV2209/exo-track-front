@@ -178,7 +178,7 @@ export function DashboardPage() {
             </div>
           ) : (
             <div className="divide-y">
-              {recentActivity.map((declaration, index) => (
+              {recentActivity.map((declaration) => (
                 <div
                   key={declaration.id}
                   className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/30"
@@ -250,7 +250,7 @@ export function DashboardPage() {
             icon: UserPlus,
             variant: 'amber' as const,
           },
-        ].map((stat, index) => (
+        ].map((stat) => (
           <div
             key={stat.label}
             className="group relative rounded-xl border bg-card p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"

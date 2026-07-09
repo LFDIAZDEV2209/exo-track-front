@@ -56,7 +56,6 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
     watch,
     formState: { errors },
   } = useForm<DeclarationFormData>({
-    // @ts-ignore
     resolver: zodResolver(declarationSchema),
   });
 

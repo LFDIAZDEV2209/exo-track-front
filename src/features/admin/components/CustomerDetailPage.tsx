@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import { ArrowLeft, Loader2, Calendar, Plus, ChevronLeft, ChevronRight, FileText, FilePlus, Eye, User } from 'lucide-react';
+import { ArrowLeft, Loader2, Calendar, ChevronLeft, ChevronRight, FileText, FilePlus, Eye, User } from 'lucide-react';
 import Link from 'next/link';
 import { userService, declarationService } from '@/services';
 import { Badge } from '@/shared/ui/badge';

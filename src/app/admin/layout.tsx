@@ -14,7 +14,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated, token, initializeAuth, _hasHydrated } = useAuthStore();
+  const { user, token, initializeAuth, _hasHydrated } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {

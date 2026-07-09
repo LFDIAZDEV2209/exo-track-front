@@ -65,7 +65,6 @@ export function ItemFormDialog({
     formState: { errors },
     reset,
   } = useForm<ItemFormData>({
-    // @ts-ignore - Compatibilidad de tipos entre zod y @hookform/resolvers
     resolver: zodResolver(itemSchema),
     defaultValues: {
       concept: '',

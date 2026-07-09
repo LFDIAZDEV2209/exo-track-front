@@ -135,7 +135,7 @@ export function CustomersPage() {
         setFilteredUsers(filtered);
       });
     }
-  }, [searchQuery, allUsers.length, fetchAllUsers]);
+  }, [searchQuery, allUsers, fetchAllUsers]);
 
   useEffect(() => {
     const customerCreated = sessionStorage.getItem('customerCreated');
@@ -161,13 +161,13 @@ export function CustomersPage() {
         }
       }, 100);
     }
-  }, []);
+  }, [fetchAllUsers, fetchUsers, searchQuery]);
 
   useEffect(() => {
     if (searchQuery.trim() && currentPage !== 1) {
       setCurrentPage(1);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const formatDate = (date: string | Date) => {
     const d = typeof date === 'string' ? new Date(date) : date;

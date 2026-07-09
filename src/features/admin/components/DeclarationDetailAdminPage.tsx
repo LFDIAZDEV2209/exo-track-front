@@ -12,7 +12,7 @@ import { declarationService, incomeService, assetService, liabilityService, user
 import { formatCurrency } from '@/lib/utils';
 import { DataTable } from '@/shared/components/data-table';
 import { useToast } from '@/hooks/use-toast';
-import { DeclarationStatus, DataSource } from '@/types';
+import { DeclarationStatus } from '@/types';
 import { ItemFormDialog } from './ItemFormDialog';
 import { DeleteItemDialog } from './DeleteItemDialog';
 import {

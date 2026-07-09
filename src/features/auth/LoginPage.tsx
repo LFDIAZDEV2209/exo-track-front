@@ -33,7 +33,7 @@ const floatingIcons = [
   { Icon: FileCheck, className: 'bottom-32 left-[6%]', size: 16, delay: 1.1, duration: 6.2, boxSize: 10 },
 ];
 
-const bgDots = Array.from({ length: 30 }, (_, i) => ({
+const bgDots = Array.from({ length: 30 }, () => ({
   left: `${Math.random() * 100}%`,
   top: `${Math.random() * 100}%`,
   size: 2 + Math.random() * 3,

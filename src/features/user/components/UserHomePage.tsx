@@ -136,7 +136,7 @@ export function UserHomePage() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
-            {declarations.map((declaration, index) => (
+            {declarations.map((declaration) => (
               <div
                 key={declaration.id}
                 className="group relative overflow-hidden rounded-xl border bg-card p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
