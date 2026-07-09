@@ -240,6 +240,26 @@
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-18px) rotate(1deg); }
+  }
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+  }
+  @keyframes orbit {
+    0% { transform: rotate(0deg) translateX(8px) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(8px) rotate(-360deg); }
+  }
 
   .animate-fade-in-up {
     animation: fade-in-up 0.5s ease-out both;
@@ -265,6 +285,21 @@
   .animate-gradient-shift {
     background-size: 200% 200%;
     animation: gradient-shift 4s ease infinite;
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+  }
+  .animate-spin-slow {
+    animation: spin-slow 20s linear infinite;
+  }
+  .animate-twinkle {
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  .animate-orbit {
+    animation: orbit 12s linear infinite;
   }
   .animate-shimmer {
     background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.1), transparent);

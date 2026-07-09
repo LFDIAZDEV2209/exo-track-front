@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, User, Lock } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -76,14 +76,17 @@ export function LoginForm() {
         <Label htmlFor="cedula" className="text-sm font-medium">
           Cédula
         </Label>
-        <Input
-          id="cedula"
-          placeholder="Ingresa tu número de cédula"
-          {...register('cedula')}
-          autoFocus
-          disabled={isLoading}
-          className="h-11 bg-muted/30 border-border/50 focus-visible:bg-background transition-all"
-        />
+        <div className="relative">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+          <Input
+            id="cedula"
+            placeholder="Ingresa tu número de cédula"
+            {...register('cedula')}
+            autoFocus
+            disabled={isLoading}
+            className="h-11 bg-muted/30 border-border/50 focus-visible:bg-background transition-all pl-10"
+          />
+        </div>
         {errors.cedula && (
           <p className="text-xs text-destructive animate-fade-in-up">
             {errors.cedula.message}
@@ -96,13 +99,14 @@ export function LoginForm() {
           Contraseña
         </Label>
         <div className="relative">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
             placeholder="Ingresa tu contraseña"
             {...register('password')}
             disabled={isLoading}
-            className="h-11 bg-muted/30 border-border/50 focus-visible:bg-background transition-all pr-10"
+            className="h-11 bg-muted/30 border-border/50 focus-visible:bg-background transition-all pl-10 pr-10"
           />
           <button
             type="button"

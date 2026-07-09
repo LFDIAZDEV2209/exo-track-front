@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Users, ChevronLeft } from 'lucide-react';
@@ -32,8 +33,8 @@ export function AdminSidebar() {
         )}
       >
         <div className="flex h-16 items-center gap-2.5 border-b border-border/50 px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-bold text-sm shadow-sm">
-            E
+          <div className="relative h-9 w-9 overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-sm">
+            <Image src="/logo.png" alt="ExoTrack" fill className="object-contain p-1" />
           </div>
           <div className="flex flex-col">
             <span className="text-base font-semibold tracking-tight">ExoTrack</span>
