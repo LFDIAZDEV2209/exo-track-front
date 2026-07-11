@@ -140,7 +140,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {declarations.map((declaration, index) => (
               <Link href={`/admin/customers/${customerId}/declarations/${declaration.id}`} key={declaration.id}>
-                <Card className="relative overflow-hidden border-l-4 border-l-emerald-500 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${index * 100}ms` }}>
+                <Card className="relative overflow-hidden border-l-4 border-l-emerald-500 pt-0 gap-0 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${index * 100}ms` }}>
                   <div className="bg-emerald-600 px-6 py-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

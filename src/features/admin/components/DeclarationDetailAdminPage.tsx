@@ -701,7 +701,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsList>
 
         <TabsContent value="assets" className="space-y-4">
-          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
             <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -733,7 +733,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsContent>
 
         <TabsContent value="incomes" className="space-y-4">
-          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
             <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -765,7 +765,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsContent>
 
         <TabsContent value="liabilities" className="space-y-4">
-          <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+          <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
             <div className="bg-emerald-600 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -797,7 +797,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsContent>
       </Tabs>
 
-      <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+      <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
         <div className="bg-emerald-600 px-6 py-4">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-white" />

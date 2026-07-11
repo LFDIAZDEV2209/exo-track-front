@@ -142,7 +142,7 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
         </div>
       </div>
 
-      <Card className="overflow-hidden border-t-4 border-t-emerald-600">
+      <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
         <div className="bg-emerald-600 px-6 py-4">
           <div className="flex items-center gap-2">
             <UserCog className="h-5 w-5 text-white" />
