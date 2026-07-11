@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Textarea } from '@/shared/ui/textarea';
-import { ArrowLeft, Plus, Loader2, ChevronLeft, ChevronRight, Trash2, Building2, TrendingUp, CreditCard, MessageSquare, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, ChevronLeft, ChevronRight, Trash2, Building2, TrendingUp, CreditCard, MessageSquare, TriangleAlert, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { declarationService, incomeService, assetService, liabilityService, userService } from '@/services';
 import { formatCurrency } from '@/lib/utils';
@@ -652,7 +652,9 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="w-1.5 h-12 bg-gradient-to-b from-emerald-400 to-emerald-600 rounded-full" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-500/20">
+          <FileText className="h-5 w-5" />
+        </div>
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">
             Declaración {declaration.taxableYear} - {client?.fullName || 'Cliente'}

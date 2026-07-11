@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, FileText, DollarSign, Database, MoreHorizontal, Circle } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
@@ -53,11 +53,11 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
   return (
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead>Concepto</TableHead>
-          <TableHead>Valor</TableHead>
-          <TableHead>Fuente</TableHead>
-          {!readOnly && <TableHead>Acciones</TableHead>}
+        <TableRow className="bg-muted/50">
+          <TableHead className="font-bold"><FileText className="h-3.5 w-3.5 mr-1.5 inline-block text-emerald-600" />Concepto</TableHead>
+          <TableHead className="font-bold"><DollarSign className="h-3.5 w-3.5 mr-1.5 inline-block text-emerald-600" />Valor</TableHead>
+          <TableHead className="font-bold"><Database className="h-3.5 w-3.5 mr-1.5 inline-block text-emerald-600" />Fuente</TableHead>
+          {!readOnly && <TableHead className="font-bold"><MoreHorizontal className="h-3.5 w-3.5 mr-1.5 inline-block text-emerald-600" />Acciones</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -71,10 +71,14 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
               className="animate-in fade-in slide-in-from-left-4 transition-colors duration-150 hover:bg-accent/50"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <TableCell className="font-medium">{item.concept}</TableCell>
+              <TableCell className="font-medium">
+                <Circle className="h-2 w-2 mr-2 inline-block fill-emerald-500 text-emerald-500" />
+                {item.concept}
+              </TableCell>
               <TableCell>{formatCurrency(amount)}</TableCell>
               <TableCell>
-                <Badge variant={source === DataSource.EXOGENO ? 'default' : 'secondary'}>
+                <Badge variant={source === DataSource.EXOGENO ? 'default' : 'secondary'} className="gap-1">
+                  {source === DataSource.EXOGENO ? <Database className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
                   {source === DataSource.EXOGENO ? 'Exógeno' : 'Manual'}
                 </Badge>
               </TableCell>
