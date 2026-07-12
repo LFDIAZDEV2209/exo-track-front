@@ -21,6 +21,16 @@ import { EmptyState } from '@/shared/layout/empty-state';
 
 const ITEMS_PER_PAGE = 6;
 
+const formatDate = (date: string | Date) => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Bogota',
+  });
+};
+
 export function UserDeclarationsPage() {
   const user = useAuthStore((state) => state.user);
   const [loading, setLoading] = useState(true);
@@ -54,15 +64,6 @@ export function UserDeclarationsPage() {
     };
     fetchDeclarations();
   }, [user?.id, currentPage]);
-
-  const formatDate = (date: string | Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
 
   const filteredDeclarations = search.trim()
     ? declarations.filter(
@@ -181,14 +182,18 @@ export function UserDeclarationsPage() {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(
-                    (p) =>
+                {(() => {
+                  const pages: number[] = [];
+                  for (let p = 1; p <= totalPages; p++) {
+                    if (
                       p === 1 ||
                       p === totalPages ||
-                      (p >= currentPage - 1 && p <= currentPage + 1),
-                  )
-                  .map((page, idx, arr) => (
+                      (p >= currentPage - 1 && p <= currentPage + 1)
+                    ) {
+                      pages.push(p);
+                    }
+                  }
+                  return pages.map((page, idx, arr) => (
                     <span key={page} className="flex items-center">
                       {idx > 0 && arr[idx - 1] !== page - 1 && (
                         <span className="px-1 text-muted-foreground/40">...</span>
@@ -197,6 +202,7 @@ export function UserDeclarationsPage() {
                         variant={currentPage === page ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setCurrentPage(page)}
+                        disabled={loading}
                         className={`h-8 min-w-8 ${
                           currentPage === page
                             ? 'bg-emerald-500 hover:bg-emerald-600'
@@ -206,7 +212,8 @@ export function UserDeclarationsPage() {
                         {page}
                       </Button>
                     </span>
-                  ))}
+                  ));
+                })()}
                 <Button
                   variant="outline"
                   size="sm"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Label } from '@/shared/ui/label';
@@ -62,8 +62,9 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
   const selectedYear = watch('taxableYear');
 
   const currentYear = new Date().getFullYear();
+  const existingYearsSet = useMemo(() => new Set(existingYears), [existingYears]);
   const availableYears = Array.from({ length: 10 }, (_, i) => currentYear - i).filter(
-    (year) => !existingYears.includes(year)
+    (year) => !existingYearsSet.has(year)
   );
 
   const onSubmit = async (data: DeclarationFormData) => {

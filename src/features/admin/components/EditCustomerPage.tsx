@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { redirect, useRouter } from 'next/navigation';
 import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { clientSchema, type ClientFormData } from '@/lib/validations';
@@ -22,6 +22,7 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const loadErrorRef = useRef(false);
 
   const {
     register,
@@ -32,44 +33,40 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
     resolver: zodResolver(clientSchema),
   });
 
-  // Cargar datos del cliente
-  useEffect(() => {
-    const fetchCustomer = async () => {
-      try {
-        setIsLoadingData(true);
-        const customer = await userService.findOne(customerId);
-        
-        // Prellenar el formulario con los datos del cliente
-        reset({
-          fullName: customer.fullName,
-          documentNumber: customer.documentNumber,
-          email: customer.email,
-          phoneNumber: customer.phoneNumber,
-          password: '', // No prellenar la contraseña por seguridad
-        });
-      } catch (error: any) {
-        console.error('Error loading customer:', error);
-        toast({
-          title: 'Error',
-          description: error?.message || 'Error al cargar los datos del cliente',
-          variant: 'destructive',
-        });
-        router.push('/admin/customers');
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
+  const fetchCustomer = useCallback(async () => {
+    try {
+      setIsLoadingData(true);
+      const customer = await userService.findOne(customerId);
 
-    if (customerId) {
-      fetchCustomer();
+      reset({
+        fullName: customer.fullName,
+        documentNumber: customer.documentNumber,
+        email: customer.email,
+        phoneNumber: customer.phoneNumber,
+        password: '',
+      });
+    } catch (error: any) {
+      console.error('Error loading customer:', error);
+      toast({
+        title: 'Error',
+        description: error?.message || 'Error al cargar los datos del cliente',
+        variant: 'destructive',
+      });
+      loadErrorRef.current = true;
+    } finally {
+      setIsLoadingData(false);
     }
-  }, [customerId, reset, router, toast]);
+  }, [customerId, reset, toast]);
+
+  useEffect(() => {
+    fetchCustomer();
+  }, [fetchCustomer]);
 
   const onSubmit = async (data: ClientFormData) => {
+    let success = false;
     try {
       setIsLoading(true);
       
-      // Preparar los datos para actualizar (solo los campos que el backend acepta)
       const updateData: {
         fullName: string;
         documentNumber: string;
@@ -83,12 +80,10 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
         phoneNumber: data.phoneNumber,
       };
 
-      // Solo incluir password si se proporcionó uno nuevo
       if (data.password && data.password.trim() !== '') {
         updateData.password = data.password;
       }
 
-      // Actualizar el cliente
       await userService.update(customerId, updateData);
 
       toast({
@@ -96,11 +91,10 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
         description: 'Los datos del cliente han sido actualizados exitosamente',
       });
 
-      router.push('/admin/customers');
+      success = true;
     } catch (error: any) {
       console.error('Error updating client:', error);
       
-      // Manejar el caso donde el mensaje es un array
       const errorMessage = Array.isArray(error?.message) 
         ? error.message[0] 
         : error?.message || error?.errors?.message?.[0] || 'Error al actualizar el cliente';
@@ -113,7 +107,15 @@ export function EditCustomerPage({ customerId }: EditCustomerPageProps) {
     } finally {
       setIsLoading(false);
     }
+
+    if (success) {
+      redirect('/admin/customers');
+    }
   };
+
+  if (loadErrorRef.current) {
+    redirect('/admin/customers');
+  }
 
   if (isLoadingData) {
     return (

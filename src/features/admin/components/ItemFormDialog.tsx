@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -59,34 +59,21 @@ export function ItemFormDialog({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
+  const formValues = useMemo(() => {
+    if (editingItem) {
+      return { concept: editingItem.concept, amount: editingItem.amount.toString() };
+    }
+    return { concept: '', amount: '' };
+  }, [editingItem]);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
-    defaultValues: {
-      concept: '',
-      amount: '',
-    },
+    values: formValues,
   });
-
-  useEffect(() => {
-    if (open) {
-      if (editingItem) {
-        reset({
-          concept: editingItem.concept,
-          amount: editingItem.amount.toString(),
-        });
-      } else {
-        reset({
-          concept: '',
-          amount: '',
-        });
-      }
-    }
-  }, [editingItem, open, reset]);
 
   const onSubmit = async (data: ItemFormData) => {
     try {

@@ -57,21 +57,12 @@ const variantStyles = {
 
 function AnimatedValue({ value, enabled }: { value: string | number; enabled: boolean }) {
   const [display, setDisplay] = useState(enabled ? '0' : String(value));
-  const startedRef = useRef(false);
+  const startedRef = useRef<boolean | null>(null);
   const numericValue = typeof value === 'string' ? parseInt(value.replace(/[^0-9]/g, '')) || 0 : value;
 
   useEffect(() => {
-    if (!enabled || startedRef.current) {
-      setDisplay(String(value));
-      return;
-    }
+    if (!enabled || startedRef.current) return;
     startedRef.current = true;
-
-    const isNum = typeof numericValue === 'number' && !isNaN(numericValue);
-    if (!isNum) {
-      setDisplay(String(value));
-      return;
-    }
 
     const prefix = typeof value === 'string' ? value.replace(/[0-9]/g, '').match(/^[^0-9]*/)?.[0] || '' : '';
     const target = numericValue as number;

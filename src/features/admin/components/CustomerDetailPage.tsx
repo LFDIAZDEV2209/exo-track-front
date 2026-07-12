@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useReducer, useCallback } from 'react';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { ArrowLeft, Loader2, Calendar, ChevronLeft, ChevronRight, FileText, FilePlus, Eye, User } from 'lucide-react';
@@ -16,58 +16,97 @@ interface CustomerDetailPageProps {
 
 const ITEMS_PER_PAGE = 6;
 
+const formatDate = (date: string | Date) => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Bogota',
+  });
+};
+
+interface FetchState {
+  loading: boolean;
+  client: any;
+  declarations: any[];
+  totalDeclarations: number;
+  totalPages: number;
+}
+
+type FetchAction =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; client: any; declarations: any[]; totalDeclarations: number; totalPages: number }
+  | { type: 'FETCH_ERROR' };
+
+function fetchReducer(state: FetchState, action: FetchAction): FetchState {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { ...state, loading: true };
+    case 'FETCH_SUCCESS':
+      return { ...state, loading: false, client: action.client, declarations: action.declarations, totalDeclarations: action.totalDeclarations, totalPages: action.totalPages };
+    case 'FETCH_ERROR':
+      return { ...state, loading: false };
+    default:
+      return state;
+  }
+}
+
+const initialFetchState: FetchState = {
+  loading: true,
+  client: null,
+  declarations: [],
+  totalDeclarations: 0,
+  totalPages: 0,
+};
+
 export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [client, setClient] = useState<any>(null);
-  const [declarations, setDeclarations] = useState<any[]>([]);
+  const [state, dispatch] = useReducer(fetchReducer, initialFetchState);
+  const { loading, client, declarations, totalDeclarations, totalPages } = state;
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalDeclarations, setTotalDeclarations] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+
+  const fetchData = useCallback(async (page: number) => {
+    try {
+      dispatch({ type: 'FETCH_START' });
+      const offset = (page - 1) * ITEMS_PER_PAGE;
+
+      const [clientData, declarationsResponse] = await Promise.all([
+        userService.findOne(customerId),
+        declarationService.findAllWithPagination(
+          {
+            limit: ITEMS_PER_PAGE,
+            offset,
+          },
+          customerId
+        ),
+      ]);
+
+      const limitedDeclarations = Array.isArray(declarationsResponse.declarations)
+        ? declarationsResponse.declarations.slice(0, ITEMS_PER_PAGE)
+        : [];
+
+      if (limitedDeclarations.length > ITEMS_PER_PAGE) {
+        limitedDeclarations.splice(ITEMS_PER_PAGE);
+      }
+
+      dispatch({
+        type: 'FETCH_SUCCESS',
+        client: { ...clientData, totalDeclarations: declarationsResponse.total },
+        declarations: limitedDeclarations,
+        totalDeclarations: declarationsResponse.total,
+        totalPages: Math.ceil(declarationsResponse.total / ITEMS_PER_PAGE),
+      });
+    } catch (error) {
+      console.error('Error loading customer:', error);
+      dispatch({ type: 'FETCH_ERROR' });
+    }
+  }, [customerId]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-
-        const [clientData, declarationsResponse] = await Promise.all([
-          userService.findOne(customerId),
-          declarationService.findAllWithPagination(
-            {
-              limit: ITEMS_PER_PAGE,
-              offset,
-            },
-            customerId
-          ),
-        ]);
-
-        const limitedDeclarations = Array.isArray(declarationsResponse.declarations)
-          ? declarationsResponse.declarations.slice(0, ITEMS_PER_PAGE)
-          : [];
-
-        if (limitedDeclarations.length > ITEMS_PER_PAGE) {
-          limitedDeclarations.splice(ITEMS_PER_PAGE);
-        }
-
-        setClient({
-          ...clientData,
-          totalDeclarations: declarationsResponse.total,
-        });
-        setDeclarations(limitedDeclarations);
-        setTotalDeclarations(declarationsResponse.total);
-        const calculatedPages = Math.ceil(declarationsResponse.total / ITEMS_PER_PAGE);
-        setTotalPages(calculatedPages);
-      } catch (error) {
-        console.error('Error loading customer:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [customerId, currentPage]);
+    fetchData(currentPage);
+  }, [currentPage, fetchData]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -91,15 +130,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
       </div>
     );
   }
-
-  const formatDate = (date: string | Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

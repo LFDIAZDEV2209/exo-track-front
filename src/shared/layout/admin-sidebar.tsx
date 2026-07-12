@@ -12,17 +12,20 @@ const navigation = [
   { name: 'Clientes', href: '/admin/customers', icon: Users },
 ];
 
+const closeSidebar = () => useUIStore.setState({ sidebarOpen: false });
+
 export function AdminSidebar() {
   const pathname = usePathname();
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
-  const closeSidebar = () => useUIStore.setState({ sidebarOpen: false });
 
   return (
     <>
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden cursor-default"
           onClick={closeSidebar}
+          aria-label="Cerrar menú lateral"
         />
       )}
 
@@ -34,7 +37,7 @@ export function AdminSidebar() {
       >
         <div className="flex h-16 items-center gap-2.5 border-b border-border/50 px-6">
           <div className="relative h-9 w-9 overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-sm">
-            <Image src="/logo.png" alt="ExoTrack" fill className="object-contain p-1" />
+            <Image src="/logo.png" alt="ExoTrack" fill sizes="64px" className="object-contain p-1" />
           </div>
           <div className="flex flex-col">
             <span className="text-base font-semibold tracking-tight">ExoTrack</span>
@@ -83,7 +86,9 @@ export function AdminSidebar() {
         </div>
 
         <button
+          type="button"
           onClick={closeSidebar}
+          aria-label="Cerrar menú"
           className="absolute -right-3 top-20 hidden h-6 w-6 items-center justify-center rounded-full border border-border/50 bg-background shadow-sm lg:flex hover:bg-accent transition-colors"
         >
           <ChevronLeft className="h-3 w-3 text-muted-foreground" />

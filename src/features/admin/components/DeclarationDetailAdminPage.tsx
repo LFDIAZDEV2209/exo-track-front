@@ -1,20 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardTitle } from '@/shared/ui/card';
-import { Button } from '@/shared/ui/button';
-import { Badge } from '@/shared/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
-import { Textarea } from '@/shared/ui/textarea';
-import { ArrowLeft, Plus, Loader2, ChevronLeft, ChevronRight, Trash2, Building2, TrendingUp, CreditCard, MessageSquare, TriangleAlert, FileText } from 'lucide-react';
+import { Loader2, ArrowLeft, Trash2, Building2, TrendingUp, CreditCard, TriangleAlert, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { declarationService, incomeService, assetService, liabilityService, userService } from '@/services';
-import { formatCurrency } from '@/lib/utils';
-import { DataTable } from '@/shared/components/data-table';
-import { useToast } from '@/hooks/use-toast';
-import { DeclarationStatus } from '@/types';
-import { ItemFormDialog } from './ItemFormDialog';
-import { DeleteItemDialog } from './DeleteItemDialog';
+import { assetService, incomeService, liabilityService } from '@/services';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,521 +16,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog';
+import { formatCurrency } from '@/lib/utils';
+import { DeclarationStatus } from '@/types';
+import { ItemFormDialog } from './ItemFormDialog';
+import { DeleteItemDialog } from './DeleteItemDialog';
+import { FinancialDataTabPanel } from './FinancialDataTabPanel';
+import { ObservationsCard } from './ObservationsCard';
+import { useAdminDeclaration } from '../hooks/useAdminDeclaration';
 
 interface DeclarationDetailAdminPageProps {
   declarationId: string;
   customerId: string;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export function DeclarationDetailAdminPage({ declarationId, customerId }: DeclarationDetailAdminPageProps) {
   const router = useRouter();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [declaration, setDeclaration] = useState<any>(null);
-  const [client, setClient] = useState<any>(null);
-  
-  // Estados para cada tipo de dato con paginación
-  const [incomes, setIncomes] = useState<any[]>([]);
-  const [assets, setAssets] = useState<any[]>([]);
-  const [liabilities, setLiabilities] = useState<any[]>([]);
-  
-  // Estados de paginación para cada tab
-  const [assetsPage, setAssetsPage] = useState(1);
-  const [assetsTotal, setAssetsTotal] = useState(0);
-  const [assetsTotalPages, setAssetsTotalPages] = useState(0);
-  
-  const [incomesPage, setIncomesPage] = useState(1);
-  const [incomesTotal, setIncomesTotal] = useState(0);
-  const [incomesTotalPages, setIncomesTotalPages] = useState(0);
-  
-  const [liabilitiesPage, setLiabilitiesPage] = useState(1);
-  const [liabilitiesTotal, setLiabilitiesTotal] = useState(0);
-  const [liabilitiesTotalPages, setLiabilitiesTotalPages] = useState(0);
-  
-  // Totales para cálculo (necesitamos todos los registros para calcular el total)
-  const [allAssets, setAllAssets] = useState<any[]>([]);
-  const [allIncomes, setAllIncomes] = useState<any[]>([]);
-  const [allLiabilities, setAllLiabilities] = useState<any[]>([]);
-  
-  const [observations, setObservations] = useState('');
-  const [deleteDeclarationDialogOpen, setDeleteDeclarationDialogOpen] = useState(false);
-  const [isDeletingDeclaration, setIsDeletingDeclaration] = useState(false);
+  const ctx = useAdminDeclaration(declarationId, customerId);
 
-  // Estados para diálogos de assets
-  const [assetFormOpen, setAssetFormOpen] = useState(false);
-  const [editingAsset, setEditingAsset] = useState<any | null>(null);
-  const [deleteAssetDialogOpen, setDeleteAssetDialogOpen] = useState(false);
-  const [assetToDelete, setAssetToDelete] = useState<{ id: string; concept: string } | null>(null);
-
-  // Estados para diálogos de incomes
-  const [incomeFormOpen, setIncomeFormOpen] = useState(false);
-  const [editingIncome, setEditingIncome] = useState<any | null>(null);
-  const [deleteIncomeDialogOpen, setDeleteIncomeDialogOpen] = useState(false);
-  const [incomeToDelete, setIncomeToDelete] = useState<{ id: string; concept: string } | null>(null);
-
-  // Estados para diálogos de liabilities
-  const [liabilityFormOpen, setLiabilityFormOpen] = useState(false);
-  const [editingLiability, setEditingLiability] = useState<any | null>(null);
-  const [deleteLiabilityDialogOpen, setDeleteLiabilityDialogOpen] = useState(false);
-  const [liabilityToDelete, setLiabilityToDelete] = useState<{ id: string; concept: string } | null>(null);
-
-  // Cargar datos iniciales (declaración y cliente)
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setLoading(true);
-        const [decl, clientData] = await Promise.all([
-          declarationService.findOne(declarationId),
-          userService.findOne(customerId),
-        ]);
-
-        setDeclaration(decl);
-        setClient(clientData);
-        setObservations(decl?.description || '');
-      } catch (error) {
-        console.error('Error loading declaration:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, [declarationId, customerId]);
-
-  // Cargar assets con paginación
-  useEffect(() => {
-    const fetchAssets = async () => {
-      try {
-        const offset = (assetsPage - 1) * ITEMS_PER_PAGE;
-        const response = await assetService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset },
-          declarationId
-        );
-        
-        const limitedAssets = Array.isArray(response.assets) 
-          ? response.assets.slice(0, ITEMS_PER_PAGE)
-          : [];
-        
-        setAssets(limitedAssets);
-        setAssetsTotal(response.total);
-        setAssetsTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
-        
-        // Si es la primera página, guardar todos para calcular totales
-        if (assetsPage === 1 && response.total > 0) {
-          // Cargar todos los assets para calcular el total
-          const allAssetsResponse = await assetService.findAllWithPagination(
-            { limit: response.total, offset: 0 },
-            declarationId
-          );
-          setAllAssets(allAssetsResponse.assets);
-        } else if (assetsPage === 1) {
-          setAllAssets([]);
-        }
-      } catch (error) {
-        console.error('Error loading assets:', error);
-      }
-    };
-
-    if (declarationId) {
-      fetchAssets();
-    }
-  }, [declarationId, assetsPage]);
-
-  // Cargar incomes con paginación
-  useEffect(() => {
-    const fetchIncomes = async () => {
-      try {
-        const offset = (incomesPage - 1) * ITEMS_PER_PAGE;
-        const response = await incomeService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset },
-          declarationId
-        );
-        
-        const limitedIncomes = Array.isArray(response.incomes) 
-          ? response.incomes.slice(0, ITEMS_PER_PAGE)
-          : [];
-        
-        setIncomes(limitedIncomes);
-        setIncomesTotal(response.total);
-        setIncomesTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
-        
-        // Si es la primera página, guardar todos para calcular totales
-        if (incomesPage === 1 && response.total > 0) {
-          const allIncomesResponse = await incomeService.findAllWithPagination(
-            { limit: response.total, offset: 0 },
-            declarationId
-          );
-          setAllIncomes(allIncomesResponse.incomes);
-        } else if (incomesPage === 1) {
-          setAllIncomes([]);
-        }
-      } catch (error) {
-        console.error('Error loading incomes:', error);
-      }
-    };
-
-    if (declarationId) {
-      fetchIncomes();
-    }
-  }, [declarationId, incomesPage]);
-
-  // Cargar liabilities con paginación
-  useEffect(() => {
-    const fetchLiabilities = async () => {
-      try {
-        const offset = (liabilitiesPage - 1) * ITEMS_PER_PAGE;
-        const response = await liabilityService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset },
-          declarationId
-        );
-        
-        const limitedLiabilities = Array.isArray(response.liabilities) 
-          ? response.liabilities.slice(0, ITEMS_PER_PAGE)
-          : [];
-        
-        setLiabilities(limitedLiabilities);
-        setLiabilitiesTotal(response.total);
-        setLiabilitiesTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
-        
-        // Si es la primera página, guardar todos para calcular totales
-        if (liabilitiesPage === 1 && response.total > 0) {
-          const allLiabilitiesResponse = await liabilityService.findAllWithPagination(
-            { limit: response.total, offset: 0 },
-            declarationId
-          );
-          setAllLiabilities(allLiabilitiesResponse.liabilities);
-        } else if (liabilitiesPage === 1) {
-          setAllLiabilities([]);
-        }
-      } catch (error) {
-        console.error('Error loading liabilities:', error);
-      }
-    };
-
-    if (declarationId) {
-      fetchLiabilities();
-    }
-  }, [declarationId, liabilitiesPage]);
-
-  const handleFinalize = async () => {
-    try {
-      await declarationService.update(declarationId, {
-        status: DeclarationStatus.COMPLETED,
-      });
-      setDeclaration({ ...declaration, status: DeclarationStatus.COMPLETED });
-      toast({
-        title: 'Declaración finalizada',
-        description: 'La declaración ha sido finalizada exitosamente',
-      });
-    } catch (error: any) {
-      const errorMessage = Array.isArray(error?.message) 
-        ? error.message[0] 
-        : error?.message || 'Error al finalizar la declaración';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleUpdateObservations = async () => {
-    try {
-      await declarationService.update(declarationId, {
-        description: observations,
-      });
-      setDeclaration({ ...declaration, description: observations });
-      toast({
-        title: 'Observaciones actualizadas',
-        description: 'Las observaciones han sido guardadas',
-      });
-    } catch (error: any) {
-      const errorMessage = Array.isArray(error?.message) 
-        ? error.message[0] 
-        : error?.message || 'Error al actualizar observaciones';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteDeclaration = async () => {
-    try {
-      setIsDeletingDeclaration(true);
-      await declarationService.remove(declarationId);
-      
-      toast({
-        title: 'Declaración eliminada',
-        description: 'La declaración ha sido eliminada exitosamente',
-      });
-
-      router.push(`/admin/customers/${customerId}`);
-    } catch (error: any) {
-      const errorMessage = Array.isArray(error?.message) 
-        ? error.message[0] 
-        : error?.message || 'Error al eliminar la declaración';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeletingDeclaration(false);
-      setDeleteDeclarationDialogOpen(false);
-    }
-  };
-
-  // Funciones para cambiar de página
-  const handleAssetsPageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= assetsTotalPages) {
-      setAssetsPage(newPage);
-    }
-  };
-
-  const handleIncomesPageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= incomesTotalPages) {
-      setIncomesPage(newPage);
-    }
-  };
-
-  const handleLiabilitiesPageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= liabilitiesTotalPages) {
-      setLiabilitiesPage(newPage);
-    }
-  };
-
-  // Funciones para recargar datos después de crear/editar/eliminar
-  const reloadAssets = async (resetToFirstPage: boolean = false) => {
-    try {
-      // Si se creó un nuevo item, volver a la primera página
-      if (resetToFirstPage) {
-        setAssetsPage(1);
-      }
-      
-      const currentPage = resetToFirstPage ? 1 : assetsPage;
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-      
-      const response = await assetService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-      
-      const limitedAssets = Array.isArray(response.assets) 
-        ? response.assets.slice(0, ITEMS_PER_PAGE)
-        : [];
-      
-      setAssets(limitedAssets);
-      setAssetsTotal(response.total);
-      const newTotalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
-      setAssetsTotalPages(newTotalPages);
-      
-      // Si la página actual quedó vacía después de eliminar, volver a la última página disponible
-      if (!resetToFirstPage && newTotalPages > 0 && currentPage > newTotalPages) {
-        setAssetsPage(newTotalPages);
-        // Recargar con la nueva página
-        const newOffset = (newTotalPages - 1) * ITEMS_PER_PAGE;
-        const newResponse = await assetService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset: newOffset },
-          declarationId
-        );
-        const newLimitedAssets = Array.isArray(newResponse.assets) 
-          ? newResponse.assets.slice(0, ITEMS_PER_PAGE)
-          : [];
-        setAssets(newLimitedAssets);
-      }
-      
-      // Recargar todos los assets para calcular totales
-      if (response.total > 0) {
-        const allAssetsResponse = await assetService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllAssets(allAssetsResponse.assets);
-      } else {
-        setAllAssets([]);
-      }
-    } catch (error) {
-      console.error('Error reloading assets:', error);
-    }
-  };
-
-  const reloadIncomes = async (resetToFirstPage: boolean = false) => {
-    try {
-      // Si se creó un nuevo item, volver a la primera página
-      if (resetToFirstPage) {
-        setIncomesPage(1);
-      }
-      
-      const currentPage = resetToFirstPage ? 1 : incomesPage;
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-      const response = await incomeService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-      
-      const limitedIncomes = Array.isArray(response.incomes) 
-        ? response.incomes.slice(0, ITEMS_PER_PAGE)
-        : [];
-      
-      setIncomes(limitedIncomes);
-      setIncomesTotal(response.total);
-      const newTotalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
-      setIncomesTotalPages(newTotalPages);
-      
-      // Si la página actual quedó vacía después de eliminar, volver a la última página disponible
-      if (!resetToFirstPage && newTotalPages > 0 && currentPage > newTotalPages) {
-        setIncomesPage(newTotalPages);
-        // Recargar con la nueva página
-        const newOffset = (newTotalPages - 1) * ITEMS_PER_PAGE;
-        const newResponse = await incomeService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset: newOffset },
-          declarationId
-        );
-        const newLimitedIncomes = Array.isArray(newResponse.incomes) 
-          ? newResponse.incomes.slice(0, ITEMS_PER_PAGE)
-          : [];
-        setIncomes(newLimitedIncomes);
-      }
-      
-      // Recargar todos los incomes para calcular totales
-      if (response.total > 0) {
-        const allIncomesResponse = await incomeService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllIncomes(allIncomesResponse.incomes);
-      } else {
-        setAllIncomes([]);
-      }
-    } catch (error) {
-      console.error('Error reloading incomes:', error);
-    }
-  };
-
-  const reloadLiabilities = async (resetToFirstPage: boolean = false) => {
-    try {
-      // Si se creó un nuevo item, volver a la primera página
-      if (resetToFirstPage) {
-        setLiabilitiesPage(1);
-      }
-      
-      const currentPage = resetToFirstPage ? 1 : liabilitiesPage;
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-      const response = await liabilityService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-      
-      const limitedLiabilities = Array.isArray(response.liabilities) 
-        ? response.liabilities.slice(0, ITEMS_PER_PAGE)
-        : [];
-      
-      setLiabilities(limitedLiabilities);
-      setLiabilitiesTotal(response.total);
-      const newTotalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
-      setLiabilitiesTotalPages(newTotalPages);
-      
-      // Si la página actual quedó vacía después de eliminar, volver a la última página disponible
-      if (!resetToFirstPage && newTotalPages > 0 && currentPage > newTotalPages) {
-        setLiabilitiesPage(newTotalPages);
-        // Recargar con la nueva página
-        const newOffset = (newTotalPages - 1) * ITEMS_PER_PAGE;
-        const newResponse = await liabilityService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset: newOffset },
-          declarationId
-        );
-        const newLimitedLiabilities = Array.isArray(newResponse.liabilities) 
-          ? newResponse.liabilities.slice(0, ITEMS_PER_PAGE)
-          : [];
-        setLiabilities(newLimitedLiabilities);
-      }
-      
-      // Recargar todos los liabilities para calcular totales
-      if (response.total > 0) {
-        const allLiabilitiesResponse = await liabilityService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllLiabilities(allLiabilitiesResponse.liabilities);
-      } else {
-        setAllLiabilities([]);
-      }
-    } catch (error) {
-      console.error('Error reloading liabilities:', error);
-    }
-  };
-
-  // Handlers para assets
-  const handleCreateAsset = () => {
-    setEditingAsset(null);
-    setAssetFormOpen(true);
-  };
-
-  const handleEditAsset = (id: string) => {
-    const asset = assets.find((a) => a.id === id);
-    if (asset) {
-      setEditingAsset(asset);
-      setAssetFormOpen(true);
-    }
-  };
-
-  const handleDeleteAsset = (id: string) => {
-    const asset = assets.find((a) => a.id === id);
-    if (asset) {
-      setAssetToDelete({ id, concept: asset.concept });
-      setDeleteAssetDialogOpen(true);
-    }
-  };
-
-  // Handlers para incomes
-  const handleCreateIncome = () => {
-    setEditingIncome(null);
-    setIncomeFormOpen(true);
-  };
-
-  const handleEditIncome = (id: string) => {
-    const income = incomes.find((i) => i.id === id);
-    if (income) {
-      setEditingIncome(income);
-      setIncomeFormOpen(true);
-    }
-  };
-
-  const handleDeleteIncome = (id: string) => {
-    const income = incomes.find((i) => i.id === id);
-    if (income) {
-      setIncomeToDelete({ id, concept: income.concept });
-      setDeleteIncomeDialogOpen(true);
-    }
-  };
-
-  // Handlers para liabilities
-  const handleCreateLiability = () => {
-    setEditingLiability(null);
-    setLiabilityFormOpen(true);
-  };
-
-  const handleEditLiability = (id: string) => {
-    const liability = liabilities.find((l) => l.id === id);
-    if (liability) {
-      setEditingLiability(liability);
-      setLiabilityFormOpen(true);
-    }
-  };
-
-  const handleDeleteLiability = (id: string) => {
-    const liability = liabilities.find((l) => l.id === id);
-    if (liability) {
-      setLiabilityToDelete({ id, concept: liability.concept });
-      setDeleteLiabilityDialogOpen(true);
-    }
-  };
-
-  if (loading) {
+  if (ctx.loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -547,7 +41,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
     );
   }
 
-  if (!declaration) {
+  if (!ctx.declaration) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">Declaración no encontrada</p>
@@ -555,101 +49,10 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
     );
   }
 
-  // Calcular totales usando todos los registros (no solo los de la página actual)
-  const totalAssets = allAssets.reduce((sum, ast) => {
-    const amount = typeof ast.amount === 'string' ? parseFloat(ast.amount) : ast.amount;
-    return sum + (amount || 0);
-  }, 0);
-  
-  const totalIncomes = allIncomes.reduce((sum, inc) => {
-    const amount = typeof inc.amount === 'string' ? parseFloat(inc.amount) : inc.amount;
-    return sum + (amount || 0);
-  }, 0);
-  
-  const totalLiabilities = allLiabilities.reduce((sum, liab) => {
-    const amount = typeof liab.amount === 'string' ? parseFloat(liab.amount) : liab.amount;
-    return sum + (amount || 0);
-  }, 0);
-
-  // Componente de paginación reutilizable
-  const PaginationControls = ({ 
-    currentPage, 
-    totalPages, 
-    total, 
-    onPageChange 
-  }: { 
-    currentPage: number; 
-    totalPages: number; 
-    total: number;
-    onPageChange: (page: number) => void;
-  }) => {
-    if (totalPages <= 1) return null;
-
-    return (
-      <div className="flex items-center justify-between pt-4 border-t mt-4">
-        <div className="text-sm text-muted-foreground">
-          Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, total)} de {total} registros
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Anterior
-          </Button>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              if (
-                page === 1 ||
-                page === totalPages ||
-                (page >= currentPage - 1 && page <= currentPage + 1)
-              ) {
-                return (
-                  <Button
-                    key={page}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onPageChange(page)}
-                    className={`min-w-10 ${currentPage === page ? 'bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500' : 'border border-input bg-background'}`}
-                  >
-                    {page}
-                  </Button>
-                );
-              } else if (page === currentPage - 2 || page === currentPage + 2) {
-                return (
-                  <span key={page} className="px-2 text-muted-foreground">
-                    ...
-                  </span>
-                );
-              }
-              return null;
-            })}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Siguiente
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-500/20">
@@ -657,7 +60,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </div>
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">
-            Declaración {declaration.taxableYear} - {client?.fullName || 'Cliente'}
+            Declaración {ctx.declaration.taxableYear} - {ctx.client?.fullName || 'Cliente'}
           </h1>
           <p className="text-muted-foreground">
             Administra los datos de la declaración de renta
@@ -665,24 +68,21 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </div>
         <div className="flex items-center gap-2">
           <Badge
-            variant={declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
+            variant={ctx.declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
             className={
-              declaration.status === DeclarationStatus.PENDING
+              ctx.declaration.status === DeclarationStatus.PENDING
                 ? 'bg-amber-100 text-amber-800'
                 : 'bg-emerald-100 text-emerald-800'
             }
           >
-            {declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
+            {ctx.declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente'}
           </Badge>
-          {declaration.status === DeclarationStatus.PENDING && (
-            <Button onClick={handleFinalize}>
+          {ctx.declaration.status === DeclarationStatus.PENDING && (
+            <Button onClick={ctx.handleFinalize}>
               Finalizar Declaración
             </Button>
           )}
-          <Button
-            variant="destructive"
-            onClick={() => setDeleteDeclarationDialogOpen(true)}
-          >
+          <Button variant="destructive" onClick={() => ctx.setDeleteDeclarationDialogOpen(true)}>
             <Trash2 className="mr-2 h-4 w-4" />
             Eliminar Declaración
           </Button>
@@ -703,238 +103,160 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         </TabsList>
 
         <TabsContent value="assets" className="space-y-4">
-          <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
-            <div className="bg-emerald-600 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-white" />
-                  <CardTitle className="font-bold text-white">Patrimonios</CardTitle>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-white">Total: {formatCurrency(totalAssets)}</span>
-                  <Button onClick={handleCreateAsset} size="sm" className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold">
-                    <Plus className="mr-1 h-4 w-4" /> Agregar
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <CardContent className="p-0">
-              <DataTable
-                data={assets}
-                onEdit={handleEditAsset}
-                onDelete={handleDeleteAsset}
-              />
-              <PaginationControls
-                currentPage={assetsPage}
-                totalPages={assetsTotalPages}
-                total={assetsTotal}
-                onPageChange={handleAssetsPageChange}
-              />
-            </CardContent>
-          </Card>
+          <FinancialDataTabPanel
+            icon={<Building2 className="h-5 w-5 text-white" />}
+            title="Patrimonios"
+            totalFormatted={formatCurrency(ctx.totalAssets)}
+            data={ctx.assets}
+            currentPage={ctx.assetsPage}
+            totalPages={ctx.assetsTotalPages}
+            totalItems={ctx.assetsTotal}
+            onPageChange={ctx.handleAssetsPageChange}
+            onEdit={ctx.handleEditAsset}
+            onDelete={ctx.handleDeleteAsset}
+            onAdd={ctx.handleCreateAsset}
+          />
         </TabsContent>
 
         <TabsContent value="incomes" className="space-y-4">
-          <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
-            <div className="bg-emerald-600 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-white" />
-                  <CardTitle className="font-bold text-white">Ingresos</CardTitle>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-white">Total: {formatCurrency(totalIncomes)}</span>
-                  <Button onClick={handleCreateIncome} size="sm" className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold">
-                    <Plus className="mr-1 h-4 w-4" /> Agregar
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <CardContent className="p-0">
-              <DataTable
-                data={incomes}
-                onEdit={handleEditIncome}
-                onDelete={handleDeleteIncome}
-              />
-              <PaginationControls
-                currentPage={incomesPage}
-                totalPages={incomesTotalPages}
-                total={incomesTotal}
-                onPageChange={handleIncomesPageChange}
-              />
-            </CardContent>
-          </Card>
+          <FinancialDataTabPanel
+            icon={<TrendingUp className="h-5 w-5 text-white" />}
+            title="Ingresos"
+            totalFormatted={formatCurrency(ctx.totalIncomes)}
+            data={ctx.incomes}
+            currentPage={ctx.incomesPage}
+            totalPages={ctx.incomesTotalPages}
+            totalItems={ctx.incomesTotal}
+            onPageChange={ctx.handleIncomesPageChange}
+            onEdit={ctx.handleEditIncome}
+            onDelete={ctx.handleDeleteIncome}
+            onAdd={ctx.handleCreateIncome}
+          />
         </TabsContent>
 
         <TabsContent value="liabilities" className="space-y-4">
-          <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
-            <div className="bg-emerald-600 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-white" />
-                  <CardTitle className="font-bold text-white">Deudas</CardTitle>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-white">Total: {formatCurrency(totalLiabilities)}</span>
-                  <Button onClick={handleCreateLiability} size="sm" className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold">
-                    <Plus className="mr-1 h-4 w-4" /> Agregar
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <CardContent className="p-0">
-              <DataTable
-                data={liabilities}
-                onEdit={handleEditLiability}
-                onDelete={handleDeleteLiability}
-              />
-              <PaginationControls
-                currentPage={liabilitiesPage}
-                totalPages={liabilitiesTotalPages}
-                total={liabilitiesTotal}
-                onPageChange={handleLiabilitiesPageChange}
-              />
-            </CardContent>
-          </Card>
+          <FinancialDataTabPanel
+            icon={<CreditCard className="h-5 w-5 text-white" />}
+            title="Deudas"
+            totalFormatted={formatCurrency(ctx.totalLiabilities)}
+            data={ctx.liabilities}
+            currentPage={ctx.liabilitiesPage}
+            totalPages={ctx.liabilitiesTotalPages}
+            totalItems={ctx.liabilitiesTotal}
+            onPageChange={ctx.handleLiabilitiesPageChange}
+            onEdit={ctx.handleEditLiability}
+            onDelete={ctx.handleDeleteLiability}
+            onAdd={ctx.handleCreateLiability}
+          />
         </TabsContent>
       </Tabs>
 
-      <Card className="overflow-hidden border-t-4 border-t-emerald-600 pt-0 gap-0">
-        <div className="bg-emerald-600 px-6 py-4">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-white" />
-            <CardTitle className="font-bold text-white">Observaciones del Contador</CardTitle>
-          </div>
-        </div>
-        <CardContent className="p-6 space-y-4">
-          <Textarea
-            value={observations}
-            onChange={(e) => setObservations(e.target.value)}
-            placeholder="Notas y comentarios"
-            rows={4}
-          />
-          <Button onClick={handleUpdateObservations} className="bg-emerald-500 hover:bg-emerald-600 text-white">
-            Guardar Observaciones
-          </Button>
-        </CardContent>
-      </Card>
+      <ObservationsCard
+        value={ctx.observations}
+        onChange={ctx.setObservations}
+        onSave={ctx.handleUpdateObservations}
+      />
 
-      {/* Diálogos para Assets */}
       <ItemFormDialog
-        open={assetFormOpen}
+        open={ctx.assetFormOpen}
         onOpenChange={(open) => {
-          setAssetFormOpen(open);
-          if (!open) {
-            setEditingAsset(null);
-          }
+          ctx.setAssetFormOpen(open);
+          if (!open) ctx.setEditingAsset(null);
         }}
-        onSuccess={(wasCreated) => reloadAssets(wasCreated)}
+        onSuccess={(wasCreated) => ctx.reloadAssets(wasCreated)}
         itemType="asset"
         declarationId={declarationId}
-        editingItem={editingAsset ? {
-          id: editingAsset.id,
-          concept: editingAsset.concept,
-          amount: typeof editingAsset.amount === 'string' ? parseFloat(editingAsset.amount) : editingAsset.amount,
+        editingItem={ctx.editingAsset ? {
+          id: ctx.editingAsset.id,
+          concept: ctx.editingAsset.concept,
+          amount: typeof ctx.editingAsset.amount === 'string' ? parseFloat(ctx.editingAsset.amount) : ctx.editingAsset.amount,
         } : null}
         createService={assetService.create}
         updateService={assetService.update}
       />
 
-      {assetToDelete && (
+      {ctx.assetToDelete && (
         <DeleteItemDialog
-          open={deleteAssetDialogOpen}
+          open={ctx.deleteAssetDialogOpen}
           onOpenChange={(open) => {
-            setDeleteAssetDialogOpen(open);
-            if (!open) {
-              setAssetToDelete(null);
-            }
+            ctx.setDeleteAssetDialogOpen(open);
+            if (!open) ctx.setAssetToDelete(null);
           }}
-          itemId={assetToDelete.id}
-          itemConcept={assetToDelete.concept}
+          itemId={ctx.assetToDelete.id}
+          itemConcept={ctx.assetToDelete.concept}
           itemType="asset"
-          onDeleted={reloadAssets}
+          onDeleted={ctx.reloadAssets}
           deleteService={assetService.remove}
         />
       )}
 
-      {/* Diálogos para Incomes */}
       <ItemFormDialog
-        open={incomeFormOpen}
+        open={ctx.incomeFormOpen}
         onOpenChange={(open) => {
-          setIncomeFormOpen(open);
-          if (!open) {
-            setEditingIncome(null);
-          }
+          ctx.setIncomeFormOpen(open);
+          if (!open) ctx.setEditingIncome(null);
         }}
-        onSuccess={(wasCreated) => reloadIncomes(wasCreated)}
+        onSuccess={(wasCreated) => ctx.reloadIncomes(wasCreated)}
         itemType="income"
         declarationId={declarationId}
-        editingItem={editingIncome ? {
-          id: editingIncome.id,
-          concept: editingIncome.concept,
-          amount: typeof editingIncome.amount === 'string' ? parseFloat(editingIncome.amount) : editingIncome.amount,
+        editingItem={ctx.editingIncome ? {
+          id: ctx.editingIncome.id,
+          concept: ctx.editingIncome.concept,
+          amount: typeof ctx.editingIncome.amount === 'string' ? parseFloat(ctx.editingIncome.amount) : ctx.editingIncome.amount,
         } : null}
         createService={incomeService.create}
         updateService={incomeService.update}
       />
 
-      {incomeToDelete && (
+      {ctx.incomeToDelete && (
         <DeleteItemDialog
-          open={deleteIncomeDialogOpen}
+          open={ctx.deleteIncomeDialogOpen}
           onOpenChange={(open) => {
-            setDeleteIncomeDialogOpen(open);
-            if (!open) {
-              setIncomeToDelete(null);
-            }
+            ctx.setDeleteIncomeDialogOpen(open);
+            if (!open) ctx.setIncomeToDelete(null);
           }}
-          itemId={incomeToDelete.id}
-          itemConcept={incomeToDelete.concept}
+          itemId={ctx.incomeToDelete.id}
+          itemConcept={ctx.incomeToDelete.concept}
           itemType="income"
-          onDeleted={reloadIncomes}
+          onDeleted={ctx.reloadIncomes}
           deleteService={incomeService.remove}
         />
       )}
 
-      {/* Diálogos para Liabilities */}
       <ItemFormDialog
-        open={liabilityFormOpen}
+        open={ctx.liabilityFormOpen}
         onOpenChange={(open) => {
-          setLiabilityFormOpen(open);
-          if (!open) {
-            setEditingLiability(null);
-          }
+          ctx.setLiabilityFormOpen(open);
+          if (!open) ctx.setEditingLiability(null);
         }}
-        onSuccess={(wasCreated) => reloadLiabilities(wasCreated)}
+        onSuccess={(wasCreated) => ctx.reloadLiabilities(wasCreated)}
         itemType="liability"
         declarationId={declarationId}
-        editingItem={editingLiability ? {
-          id: editingLiability.id,
-          concept: editingLiability.concept,
-          amount: typeof editingLiability.amount === 'string' ? parseFloat(editingLiability.amount) : editingLiability.amount,
+        editingItem={ctx.editingLiability ? {
+          id: ctx.editingLiability.id,
+          concept: ctx.editingLiability.concept,
+          amount: typeof ctx.editingLiability.amount === 'string' ? parseFloat(ctx.editingLiability.amount) : ctx.editingLiability.amount,
         } : null}
         createService={liabilityService.create}
         updateService={liabilityService.update}
       />
 
-      {liabilityToDelete && (
+      {ctx.liabilityToDelete && (
         <DeleteItemDialog
-          open={deleteLiabilityDialogOpen}
+          open={ctx.deleteLiabilityDialogOpen}
           onOpenChange={(open) => {
-            setDeleteLiabilityDialogOpen(open);
-            if (!open) {
-              setLiabilityToDelete(null);
-            }
+            ctx.setDeleteLiabilityDialogOpen(open);
+            if (!open) ctx.setLiabilityToDelete(null);
           }}
-          itemId={liabilityToDelete.id}
-          itemConcept={liabilityToDelete.concept}
+          itemId={ctx.liabilityToDelete.id}
+          itemConcept={ctx.liabilityToDelete.concept}
           itemType="liability"
-          onDeleted={reloadLiabilities}
+          onDeleted={ctx.reloadLiabilities}
           deleteService={liabilityService.remove}
         />
       )}
 
-      {/* Diálogo de confirmación para eliminar declaración */}
-      <AlertDialog open={deleteDeclarationDialogOpen} onOpenChange={setDeleteDeclarationDialogOpen}>
+      <AlertDialog open={ctx.deleteDeclarationDialogOpen} onOpenChange={ctx.setDeleteDeclarationDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -943,18 +265,18 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
             </AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente la declaración del año{' '}
-              <strong>{declaration.taxableYear}</strong> para el cliente{' '}
-              <strong>{client?.fullName || 'el cliente'}</strong>, incluyendo todos los patrimonios, ingresos y deudas asociados.
+              <strong>{ctx.declaration.taxableYear}</strong> para el cliente{' '}
+              <strong>{ctx.client?.fullName || 'el cliente'}</strong>, incluyendo todos los patrimonios, ingresos y deudas asociados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingDeclaration}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={ctx.isDeletingDeclaration}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteDeclaration}
-              disabled={isDeletingDeclaration}
+              onClick={ctx.handleDeleteDeclaration}
+              disabled={ctx.isDeletingDeclaration}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeletingDeclaration ? (
+              {ctx.isDeletingDeclaration ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Eliminando...

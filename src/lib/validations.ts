@@ -35,19 +35,22 @@ export const declarationSchema = z.object({
   description: z.string().optional(),
 });
 
-export const assetSchema = z.object({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const assetSchema = z.object({
   concept: z.string().min(3, 'El concepto debe tener al menos 3 caracteres'),
   amount: z.number().positive('El valor debe ser positivo').max(999999999999, 'Valor demasiado grande'),
   source: z.enum(['exogeno', 'manual']),
 });
 
-export const incomeSchema = z.object({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const incomeSchema = z.object({
   concept: z.string().min(3, 'El concepto debe tener al menos 3 caracteres'),
   amount: z.number().positive('El valor debe ser positivo').max(999999999999, 'Valor demasiado grande'),
   source: z.enum(['exogeno', 'manual']),
 });
 
-export const liabilitySchema = z.object({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const liabilitySchema = z.object({
   concept: z.string().min(3, 'El concepto debe tener al menos 3 caracteres'),
   amount: z.number().positive('El valor debe ser positivo').max(999999999999, 'Valor demasiado grande'),
   source: z.enum(['exogeno', 'manual']),

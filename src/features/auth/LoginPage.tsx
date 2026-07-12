@@ -81,6 +81,7 @@ export function LoginPage() {
                   src="/logo.png"
                   alt="ExoTrack"
                   fill
+                  sizes="64px"
                   className="object-contain p-2"
                   priority
                 />

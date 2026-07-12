@@ -21,6 +21,26 @@ interface DataTableProps {
   readOnly?: boolean;
 }
 
+// Normalizar el source (el backend puede devolver "MANUAL" o "EXOGENO" en mayúsculas)
+const normalizeSource = (source: DataSource | string): DataSource => {
+  if (typeof source === 'string') {
+    const upperSource = source.toUpperCase();
+    if (upperSource === 'EXOGENO' || upperSource === 'EXOGENOUS') {
+      return DataSource.EXOGENO;
+    }
+    return DataSource.MANUAL;
+  }
+  return source;
+};
+
+// Normalizar el amount (puede venir como string)
+const normalizeAmount = (amount: number | string): number => {
+  if (typeof amount === 'string') {
+    return parseFloat(amount);
+  }
+  return amount;
+};
+
 export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTableProps) {
   if (!data || data.length === 0) {
     return (
@@ -29,26 +49,6 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
       </div>
     );
   }
-
-  // Normalizar el source (el backend puede devolver "MANUAL" o "EXOGENO" en mayúsculas)
-  const normalizeSource = (source: DataSource | string): DataSource => {
-    if (typeof source === 'string') {
-      const upperSource = source.toUpperCase();
-      if (upperSource === 'EXOGENO' || upperSource === 'EXOGENOUS') {
-        return DataSource.EXOGENO;
-      }
-      return DataSource.MANUAL;
-    }
-    return source;
-  };
-
-  // Normalizar el amount (puede venir como string)
-  const normalizeAmount = (amount: number | string): number => {
-    if (typeof amount === 'string') {
-      return parseFloat(amount);
-    }
-    return amount;
-  };
 
   return (
     <Table>

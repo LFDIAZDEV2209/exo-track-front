@@ -1,24 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import {
-  Plus,
-  Loader2,
-  Search,
-  Pencil,
-  Trash2,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-} from 'lucide-react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { Plus, Loader2, Search, Users } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { Badge } from '@/shared/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import Link from 'next/link';
 import { userService } from '@/services';
 import { DeleteCustomerDialog } from './DeleteCustomerDialog';
+import { CustomersTable } from './CustomersTable';
 import { EmptyState } from '@/shared/layout/empty-state';
 
 const ITEMS_PER_PAGE = 10;
@@ -29,7 +18,6 @@ export function CustomersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<{ id: string; name: string } | null>(
     null,
@@ -38,6 +26,20 @@ export function CustomersPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const isLoadingAllUsersRef = useRef(false);
+
+  const derivedFilteredUsers = useMemo(() => {
+    const query = searchQuery.trim();
+    if (!query) return users;
+    if (allUsers.length === 0) return [];
+
+    const lowerQuery = query.toLowerCase();
+    return allUsers.filter(
+      (user) =>
+        user.fullName.toLowerCase().includes(lowerQuery) ||
+        user.documentNumber.includes(lowerQuery) ||
+        user.email.toLowerCase().includes(lowerQuery),
+    );
+  }, [searchQuery, users, allUsers]);
 
   const fetchAllUsers = useCallback(async () => {
     if (isLoadingAllUsersRef.current) return [];
@@ -93,89 +95,48 @@ export function CustomersPage() {
     [currentPage],
   );
 
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      fetchUsers(currentPage);
-    }
-  }, [currentPage, searchQuery, fetchUsers]);
+  const searchQueryRef = useRef(searchQuery);
+  searchQueryRef.current = searchQuery;
+  const fetchUsersRef = useRef(fetchUsers);
+  fetchUsersRef.current = fetchUsers;
+  const fetchAllUsersRef = useRef(fetchAllUsers);
+  fetchAllUsersRef.current = fetchAllUsers;
 
   useEffect(() => {
-    if (!searchQuery.trim() && users.length > 0) {
-      setFilteredUsers(users);
-    }
-  }, [users, searchQuery]);
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setAllUsers([]);
-    }
-  }, [searchQuery]);
+    fetchUsersRef.current(1);
+  }, []);
 
   useEffect(() => {
     const query = searchQuery.trim();
-    if (!query) return;
-
-    const filterUsers = (usersList: any[]) => {
-      const lowerQuery = query.toLowerCase();
-      return usersList.filter(
-        (user) =>
-          user.fullName.toLowerCase().includes(lowerQuery) ||
-          user.documentNumber.includes(lowerQuery) ||
-          user.email.toLowerCase().includes(lowerQuery),
-      );
-    };
-
-    if (allUsers.length > 0) {
-      const filtered = filterUsers(allUsers);
-      setFilteredUsers(filtered);
-    } else if (!isLoadingAllUsersRef.current) {
-      fetchAllUsers().then((allUsersList) => {
-        setAllUsers(allUsersList);
-        const filtered = filterUsers(allUsersList);
-        setFilteredUsers(filtered);
-      });
+    if (!query) {
+      setAllUsers((prev) => (prev.length === 0 ? prev : []));
+      return;
     }
+    if (allUsers.length > 0 || isLoadingAllUsersRef.current) return;
+    fetchAllUsers();
   }, [searchQuery, allUsers, fetchAllUsers]);
 
   useEffect(() => {
     const customerCreated = sessionStorage.getItem('customerCreated');
-    if (customerCreated === 'true') {
-      sessionStorage.removeItem('customerCreated');
-      setTimeout(() => {
-        const currentQuery = searchQuery.trim();
-        if (!currentQuery) {
-          fetchUsers(1);
-          setCurrentPage(1);
-        } else {
-          fetchAllUsers().then((allUsersList) => {
-            const query = currentQuery.toLowerCase();
-            setFilteredUsers(
-              allUsersList.filter(
-                (u) =>
-                  u.fullName.toLowerCase().includes(query) ||
-                  u.documentNumber.includes(query) ||
-                  u.email.toLowerCase().includes(query),
-              ),
-            );
-          });
-        }
-      }, 100);
-    }
-  }, [fetchAllUsers, fetchUsers, searchQuery]);
+    if (customerCreated !== 'true') return;
 
-  useEffect(() => {
-    if (searchQuery.trim() && currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [searchQuery, currentPage]);
+    sessionStorage.removeItem('customerCreated');
+    const timerId = setTimeout(() => {
+      const currentQuery = searchQueryRef.current.trim();
+      if (!currentQuery) {
+        setCurrentPage(1);
+        fetchUsersRef.current(1);
+      } else {
+        fetchAllUsersRef.current();
+      }
+    }, 100);
+    return () => clearTimeout(timerId);
+  }, []);
 
-  const formatDate = (date: string | Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchUsers(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteClick = (userId: string, userName: string) => {
@@ -186,15 +147,7 @@ export function CustomersPage() {
   const handleDeleted = async () => {
     if (searchQuery.trim()) {
       const allUsersList = await fetchAllUsers();
-      const query = searchQuery.toLowerCase();
-      setFilteredUsers(
-        allUsersList.filter(
-          (u) =>
-            u.fullName.toLowerCase().includes(query) ||
-            u.documentNumber.includes(query) ||
-            u.email.toLowerCase().includes(query),
-        ),
-      );
+      setAllUsers(allUsersList);
     } else {
       await fetchUsers(currentPage);
     }
@@ -234,7 +187,7 @@ export function CustomersPage() {
                 </div>
                 <span className="text-sm font-bold text-white">
                   {searchQuery.trim()
-                    ? `${filteredUsers.length} resultado${filteredUsers.length !== 1 ? 's' : ''} de ${totalUsers} clientes`
+                    ? `${derivedFilteredUsers.length} resultado${derivedFilteredUsers.length !== 1 ? 's' : ''} de ${totalUsers} clientes`
                     : `${totalUsers} cliente${totalUsers !== 1 ? 's' : ''} registrado${totalUsers !== 1 ? 's' : ''}`}
                 </span>
               </div>
@@ -246,7 +199,15 @@ export function CustomersPage() {
               <Input
                 placeholder="Buscar por nombre, cédula o email..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  if (value.trim()) {
+                    setCurrentPage(1);
+                  } else {
+                    fetchUsers(currentPage);
+                  }
+                }}
                 className="pl-10 h-10 bg-muted/30 border-border/50 focus-visible:bg-background"
                 disabled={loading || searching}
               />
@@ -259,7 +220,7 @@ export function CustomersPage() {
                   {searching ? 'Buscando...' : 'Cargando...'}
                 </span>
               </div>
-            ) : filteredUsers.length === 0 ? (
+            ) : derivedFilteredUsers.length === 0 ? (
               <EmptyState
                 title={searchQuery.trim() ? 'Sin resultados' : 'Sin clientes'}
                 description={
@@ -279,165 +240,16 @@ export function CustomersPage() {
                 }
               />
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border/50">
-                      <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        Nombre
-                      </TableHead>
-                      <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">
-                        Cédula
-                      </TableHead>
-                      <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground hidden md:table-cell">
-                        Email
-                      </TableHead>
-                      <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">
-                        Decl.
-                      </TableHead>
-                      <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground hidden lg:table-cell">
-                        Registro
-                      </TableHead>
-                      <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">
-                        Acciones
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow
-                        key={user.id}
-                        className="transition-colors hover:bg-muted/30 border-b border-border/30"
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 text-emerald-600 text-xs font-semibold border border-emerald-500/20">
-                              {user.fullName
-                                .split(' ')
-                                .map((n: string) => n[0])
-                                .join('')
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </div>
-                            <span className="font-bold text-sm">{user.fullName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell text-sm">
-                          {user.documentNumber}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {user.email}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            variant="default"
-                            className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-semibold"
-                          >
-                            {user.totalDeclarations || 0}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                          {formatDate(user.createdAt)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Link href={`/admin/customers/${user.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-emerald-500/10 hover:text-emerald-600"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            <Link href={`/admin/customers/${user.id}/edit`}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-600"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                              onClick={() => handleDeleteClick(user.id, user.fullName)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-
-            {!searchQuery.trim() && totalPages > 1 && filteredUsers.length > 0 && (
-              <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-4">
-                <span className="text-xs text-muted-foreground">
-                  Página {currentPage} de {totalPages}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentPage((p) => Math.max(1, p - 1));
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    disabled={currentPage === 1 || loading}
-                    className="h-8"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(
-                      (p) =>
-                        p === 1 ||
-                        p === totalPages ||
-                        (p >= currentPage - 1 && p <= currentPage + 1),
-                    )
-                    .map((page, idx, arr) => (
-                      <span key={page} className="flex items-center">
-                        {idx > 0 && arr[idx - 1] !== page - 1 && (
-                          <span className="px-1 text-muted-foreground/40">...</span>
-                        )}
-                        <Button
-                          variant={currentPage === page ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => {
-                            setCurrentPage(page);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          disabled={loading}
-                          className={`h-8 min-w-8 ${
-                            currentPage === page
-                              ? 'bg-emerald-500 hover:bg-emerald-600'
-                              : ''
-                          }`}
-                        >
-                          {page}
-                        </Button>
-                      </span>
-                    ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentPage((p) => Math.min(totalPages, p + 1));
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    disabled={currentPage === totalPages || loading}
-                    className="h-8"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <CustomersTable
+                users={derivedFilteredUsers}
+                searchQuery={searchQuery}
+                loading={loading}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalUsers={totalUsers}
+                onPageChange={handlePageChange}
+                onDeleteClick={handleDeleteClick}
+              />
             )}
           </div>
         </div>

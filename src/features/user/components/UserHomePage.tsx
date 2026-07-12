@@ -27,6 +27,16 @@ function SectionHeader({ title, description, icon: Icon }: { title: string; desc
   );
 }
 
+const formatDate = (date: string | Date) => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Bogota',
+  });
+};
+
 export function UserHomePage() {
   const user = useAuthStore((state) => state.user);
   const [loading, setLoading] = useState(true);
@@ -59,15 +69,6 @@ export function UserHomePage() {
   ).length;
 
   const userName = user?.fullName?.split(' ')[0] || 'Usuario';
-
-  const formatDate = (date: string | Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
 
   return (
     <div className="space-y-8">

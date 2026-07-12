@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { ClienteSidebar } from '@/shared/layout/customer-sidebar';
 import { Header } from '@/shared/layout/header';
 import { useAuthStore } from '@/stores/auth-store';
@@ -13,51 +13,45 @@ export default function ClienteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const { user, token, initializeAuth, _hasHydrated } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Esperar a que el store se haya rehidratado
-    if (!_hasHydrated) {
-      return;
-    }
+    let cancelled = false;
 
     const checkAuth = async () => {
-      // Si hay token pero no hay usuario, intentar restaurar la sesión
-      if (token && !user) {
+      const { user: currentUser, initializeAuth } = useAuthStore.getState();
+      if (!currentUser) {
         try {
           await initializeAuth();
         } catch (error) {
           console.error('Failed to restore session:', error);
         }
       }
-      
-      // Verificar autenticación y rol después de restaurar
-      const currentState = useAuthStore.getState();
-      if (!currentState.isAuthenticated || currentState.user?.role !== UserRole.USER) {
-        router.push('/login');
+      if (cancelled) return;
+
+      const state = useAuthStore.getState();
+      if (!state.isAuthenticated || state.user?.role !== UserRole.USER) {
+        redirect('/login');
+        return;
       }
-      
+
       setIsChecking(false);
     };
 
     checkAuth();
-  }, [_hasHydrated, token, user, router, initializeAuth]);
 
-  // Mostrar loader mientras se rehidrata o verifica
-  if (!_hasHydrated || isChecking) {
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (isChecking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  // Verificar nuevamente después de la rehidratación
-  const currentState = useAuthStore.getState();
-  if (!currentState.isAuthenticated || currentState.user?.role !== UserRole.USER) {
-    return null;
   }
 
   return (

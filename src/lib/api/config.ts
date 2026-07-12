@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
+  baseURL: '/api/v1',
   useMockAPI: process.env.NEXT_PUBLIC_USE_MOCK_API === 'false' ? false : true,
   timeout: 10000,
 };
@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
   auth: {
     login: '/auth/login',
     register: '/auth/register',
+    logout: '/auth/logout',
     checkAuthStatus: '/auth/check-auth-status',
   },
   // Users
