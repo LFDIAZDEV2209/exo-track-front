@@ -63,7 +63,8 @@ export async function loginAction(
         isActive: loginData.isActive,
       },
     };
-  } catch {
+  } catch (error) {
+    console.error('[LoginAction] Error:', error);
     return { error: 'Error de conexión con el servidor' };
   }
 }

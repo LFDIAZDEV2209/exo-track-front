@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { ThemeToggle } from '@/shared/components/theme-toggle';
 import { LoginForm } from './components/LoginForm';
@@ -33,15 +34,18 @@ const floatingIcons = [
   { Icon: FileCheck, className: 'bottom-32 left-[6%]', size: 16, delay: 1.1, duration: 6.2, boxSize: 10 },
 ];
 
-const bgDots = Array.from({ length: 30 }, () => ({
-  left: `${Math.random() * 100}%`,
-  top: `${Math.random() * 100}%`,
-  size: 2 + Math.random() * 3,
-  delay: Math.random() * 5,
-  duration: 3 + Math.random() * 4,
-}));
+function generateBgDots() {
+  return Array.from({ length: 30 }, () => ({
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    size: 2 + Math.random() * 3,
+    delay: Math.random() * 5,
+    duration: 3 + Math.random() * 4,
+  }));
+}
 
 export function LoginPage() {
+  const [bgDots] = useState(generateBgDots);
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
       <div className="absolute inset-0 bg-grid pointer-events-none" />
