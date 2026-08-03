@@ -30,8 +30,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       const fetchedUser = await authService.getCurrentUser();
       set({ user: fetchedUser, isAuthenticated: true });
-    } catch (error) {
-      console.error('[AuthStore] Failed to restore session:', error);
+    } catch (error: any) {
+      // 401 = sesión expirada o token inválido: flujo normal hacia el login, no es un error
+      if (error?.status !== 401) {
+        console.error('[AuthStore] Failed to restore session:', error);
+      }
       set({ user: null, isAuthenticated: false });
     }
   },

@@ -16,6 +16,21 @@ export interface CreateDeclarationRequest {
   description?: string;
 }
 
+export interface ExogenaItemRequest {
+  concept: string;
+  amount: number;
+  sourceDetail?: string;
+}
+
+export interface CreateFromExogenaRequest {
+  userId: string;
+  taxableYear: number;
+  description?: string;
+  assets?: ExogenaItemRequest[];
+  incomes?: ExogenaItemRequest[];
+  liabilities?: ExogenaItemRequest[];
+}
+
 export interface UpdateDeclarationRequest {
   status?: Declaration['status'];
   description?: string;
@@ -108,6 +123,19 @@ export const declarationService = {
    */
   async create(data: CreateDeclarationRequest): Promise<Declaration> {
     return apiClient.post<Declaration>(API_ENDPOINTS.declarations.create, data);
+  },
+
+  /**
+   * Crear una declaración junto con sus patrimonios, ingresos y deudas desde
+   * un reporte exógeno (una sola petición y una sola transacción en el backend)
+   * @param data - Datos de la declaración y de los ítems importados
+   * @returns Declaración creada con conteos por tipo de ítem
+   */
+  async createFromExogena(data: CreateFromExogenaRequest): Promise<{
+    declaration: Declaration;
+    counts: { assets: number; incomes: number; liabilities: number };
+  }> {
+    return apiClient.post(API_ENDPOINTS.declarations.importExogena, data);
   },
 
   /**

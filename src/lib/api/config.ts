@@ -47,6 +47,7 @@ export const API_ENDPOINTS = {
     },
     findOne: (id: string) => `/declarations/${id}`,
     create: '/declarations',
+    importExogena: '/declarations/from-exogena',
     update: (id: string) => `/declarations/${id}`,
     remove: (id: string) => `/declarations/${id}`,
     stats: '/declarations/stats',

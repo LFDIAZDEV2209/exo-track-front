@@ -6,6 +6,7 @@ export interface Liability {
   concept: string;
   amount: number;
   source: DataSource;
+  sourceDetail?: string;
   createdAt: Date;
   updatedAt: Date;
 }

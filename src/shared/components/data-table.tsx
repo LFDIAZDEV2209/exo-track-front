@@ -12,6 +12,7 @@ interface DataTableItem {
   concept: string;
   amount: number | string;
   source: DataSource | string;
+  sourceDetail?: string;
 }
 
 interface DataTableProps {
@@ -21,11 +22,11 @@ interface DataTableProps {
   readOnly?: boolean;
 }
 
-// Normalizar el source (el backend puede devolver "MANUAL" o "EXOGENO" en mayúsculas)
+// Normalizar el source (el backend puede devolver "EXOGENA", "EXOGENO" o "MANUAL")
 const normalizeSource = (source: DataSource | string): DataSource => {
   if (typeof source === 'string') {
     const upperSource = source.toUpperCase();
-    if (upperSource === 'EXOGENO' || upperSource === 'EXOGENOUS') {
+    if (upperSource === 'EXOGENA' || upperSource === 'EXOGENO' || upperSource === 'EXOGENOUS') {
       return DataSource.EXOGENO;
     }
     return DataSource.MANUAL;
@@ -73,7 +74,14 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
             >
               <TableCell className="font-medium">
                 <Circle className="h-2 w-2 mr-2 inline-block fill-emerald-500 text-emerald-500" />
-                {item.concept}
+                <span className="flex flex-col">
+                  <span>{item.concept}</span>
+                  {item.sourceDetail && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {item.sourceDetail}
+                    </span>
+                  )}
+                </span>
               </TableCell>
               <TableCell>{formatCurrency(amount)}</TableCell>
               <TableCell>

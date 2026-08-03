@@ -6,6 +6,7 @@ export interface Income {
   concept: string;
   amount: number;
   source: DataSource;
+  sourceDetail?: string;
   createdAt: Date;
   updatedAt: Date;
 }
