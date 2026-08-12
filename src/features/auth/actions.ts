@@ -1,11 +1,12 @@
 'use server';
 
+import { cookies } from 'next/headers';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
 export type LoginActionState = {
   error?: string;
   redirectUrl?: string;
-  token?: string;
   user?: {
     id: string;
     fullName: string;
@@ -46,13 +47,26 @@ export async function loginAction(
 
     const loginData = await loginResponse.json();
     const token: string | undefined = loginData.token;
+    if (!token) {
+      console.error('[LoginAction] Login response did not contain a token');
+      return { error: 'Respuesta inválida del servidor de autenticación' };
+    }
+
+    const cookieStore = await cookies();
+    cookieStore.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
     const role: string = loginData.role || 'user';
     const redirectUrl = role === 'admin' ? '/admin/dashboard' : '/user/home';
 
     return {
       error: undefined,
       redirectUrl,
-      token,
       user: {
         id: loginData.id,
         fullName: loginData.fullName,

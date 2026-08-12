@@ -26,12 +26,6 @@ export function LoginForm() {
 
   useEffect(() => {
     if (state.redirectUrl) {
-      if (state.token) {
-        const maxAge = 60 * 60 * 24 * 7;
-        const isProd = process.env.NODE_ENV === 'production';
-        const secure = isProd ? '; secure' : '';
-        document.cookie = `auth_token=${state.token}; path=/; max-age=${maxAge}; samesite=lax${secure}`;
-      }
       window.location.href = state.redirectUrl;
     } else if (state.error) {
       toast({
@@ -40,7 +34,7 @@ export function LoginForm() {
         variant: 'destructive',
       });
     }
-  }, [state.redirectUrl, state.error, state.token, toast]);
+  }, [state.redirectUrl, state.error, toast]);
 
   return (
     <form action={formAction} className="space-y-5" noValidate>
