@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   TrendingUp,
   Building2,
@@ -96,6 +96,8 @@ export function ExogenaImportReview({
     }
     return { byCategory, totalIncluded, totalAmount };
   }, [items]);
+
+  const [focusedAmountId, setFocusedAmountId] = useState<string | null>(null);
 
   const updateItem = (id: string, patch: Partial<ExogenaItem>) => {
     onItemsChange(items.map((item) => (item.id === id ? { ...item, ...patch } : item)));
@@ -228,15 +230,22 @@ export function ExogenaImportReview({
                       )}
                     </div>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={Number.isFinite(item.amount) ? String(item.amount) : ''}
+                      type="text"
+                      value={
+                        focusedAmountId === item.id
+                          ? (Number.isFinite(item.amount) ? String(item.amount) : '')
+                          : (Number.isFinite(item.amount) ? formatCurrency(item.amount) : '')
+                      }
                       onChange={(e) => {
-                        const parsed = parseFloat(e.target.value);
+                        const raw = e.target.value.replace(/[^0-9.-]/g, '');
+                        const parsed = parseFloat(raw);
                         updateItem(item.id, { amount: Number.isNaN(parsed) ? 0 : parsed });
                       }}
-                      onFocus={(e) => e.target.select()}
+                      onFocus={(e) => {
+                        setFocusedAmountId(item.id);
+                        e.target.select();
+                      }}
+                      onBlur={() => setFocusedAmountId(null)}
                       aria-label="Valor"
                     />
                     <Select

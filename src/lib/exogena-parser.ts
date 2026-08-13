@@ -49,6 +49,74 @@ function classify(usageSuggestion: string, amount: number): ExogenaCategory {
 }
 
 /**
+ * Recorta el concepto largo del reporte exógeno de la DIAN.
+ * Ejemplo: "Valor total de la inversión, aporte o derecho social efectuada y
+ * acumulada a 31 de diciembre del año a reportar (Concepto: 1010)"
+ * → "Inversión, aporte o derecho social (Concepto: 1010)"
+ */
+function truncateConcept(detalle: string): string {
+  // Si tiene "(Concepto: XXXX)", extraer solo esa parte como identificador
+  const conceptoMatch = detalle.match(/\(Concepto:\s*(\d+)\)/);
+  const conceptoCode = conceptoMatch ? `(Concepto: ${conceptoMatch[1]})` : '';
+
+  // Quitar el código para analizar el texto descriptivo
+  let text = detalle.replace(/\s*\(Concepto:\s*\d+\)\s*/g, '').trim();
+
+  // Si el texto es muy largo (>60 chars), tomar solo las primeras palabras significativas
+  if (text.length > 60) {
+    // Buscar la primera coma o punto para cortar
+    const commaIdx = text.indexOf(',');
+    if (commaIdx > 10 && commaIdx < 50) {
+      text = text.substring(0, commaIdx);
+    } else {
+      // Cortar a ~50 caracteres en un espacio
+      const words = text.split(' ');
+      let truncated = '';
+      for (const word of words) {
+        if ((truncated + word).length > 50) break;
+        truncated += (truncated ? ' ' : '') + word;
+      }
+      text = truncated;
+    }
+  }
+
+  // Capitalizar primera letra
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+
+  return conceptoCode ? `${text} ${conceptoCode}` : text;
+}
+
+/**
+ * Recorta la información adicional del sourceDetail.
+ * Ejemplo: "Número de Cuenta / Documento: 3006366904 | Concepto Códigos Tributaria: *5* Depósitos electrónicos"
+ * → "Cuenta: 3006366904"
+ */
+function truncateAdditionalInfo(info: string): string {
+  if (info.length <= 50) return info;
+
+  // Si tiene separadores " | ", tomar solo el primer segmento relevante
+  const separatorIdx = info.indexOf(' | ');
+  if (separatorIdx > 0) {
+    let segment = info.substring(0, separatorIdx).trim();
+
+    // Simplificar etiquetas largas
+    segment = segment.replace(/Número de Cuenta\s*\/\s*Documento:/i, 'Cuenta:');
+    segment = segment.replace(/Porcentaje de Participación:/i, 'Participación:');
+
+    return segment;
+  }
+
+  // Si no tiene separadores, cortar a ~50 chars
+  const words = info.split(' ');
+  let truncated = '';
+  for (const word of words) {
+    if ((truncated + word).length > 50) break;
+    truncated += (truncated ? ' ' : '') + word;
+  }
+  return truncated;
+}
+
+/**
  * Parsea el archivo Excel de "Reporte de información exógena" de la DIAN.
  * El layout es fijo:
  *  - Filas 1-12: metadatos (año, identificación, nombre del consultante)
@@ -125,12 +193,12 @@ export async function parseExogenaFile(file: File): Promise<ExogenaParseResult> 
       sourceParts.push(`NIT ${reporterNit}`);
     }
     if (additionalInfo) {
-      sourceParts.push(additionalInfo);
+      sourceParts.push(truncateAdditionalInfo(additionalInfo));
     }
 
     items.push({
       id: localId(),
-      concept: detalle,
+      concept: truncateConcept(detalle),
       amount: valor,
       category: classify(usageSuggestion, valor),
       reporterName,

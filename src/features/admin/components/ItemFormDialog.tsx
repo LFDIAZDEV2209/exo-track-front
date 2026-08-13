@@ -17,6 +17,7 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Loader2, Building2, TrendingUp, CreditCard, FileText, DollarSign, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
 
 const itemSchema = z.object({
   concept: z.string().min(1, 'El concepto es requerido'),
@@ -58,6 +59,7 @@ export function ItemFormDialog({
 }: ItemFormDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [amountFocused, setAmountFocused] = useState(false);
 
   const formValues = useMemo(() => {
     if (editingItem) {
@@ -69,11 +71,14 @@ export function ItemFormDialog({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
     values: formValues,
   });
+
+  const watchedAmount = watch('amount');
 
   const onSubmit = async (data: ItemFormData) => {
     try {
@@ -179,11 +184,24 @@ export function ItemFormDialog({
             </Label>
             <Input
               id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              {...register('amount')}
-              placeholder="0.00"
+              type="text"
+              value={
+                amountFocused
+                  ? (watchedAmount || '')
+                  : (watchedAmount ? formatCurrency(parseFloat(watchedAmount)) : '')
+              }
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9.-]/g, '');
+                // Manually update the form field
+                const event = { target: { name: 'amount', value: raw } };
+                register('amount').onChange(event);
+              }}
+              onFocus={(e) => {
+                setAmountFocused(true);
+                e.target.select();
+              }}
+              onBlur={() => setAmountFocused(false)}
+              placeholder="0"
               disabled={isLoading}
               className="transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
             />
