@@ -1,15 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Loader2, Building2, TrendingUp, CreditCard, MessageSquare, Shapes } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
-import { declarationService, incomeService, assetService, liabilityService, conceptTypeService, customItemService } from '@/services';
+import { declarationService, incomeService, assetService, liabilityService, conceptTypeService, customItemService, unclassifiedItemService } from '@/services';
 import type { ConceptType } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { FinancialDataTabPanel } from '@/features/admin/components/FinancialDataTabPanel';
+import { DeclarationReportButtons } from '@/shared/components/declaration-report-buttons';
+import { buildDeclarationReport } from '@/lib/declaration-report';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface DeclarationDetailPageProps {
   declarationId: string;
@@ -30,15 +33,19 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
   const [assets, setAssets] = useState<any[]>([]);
   const [liabilities, setLiabilities] = useState<any[]>([]);
   const [customItems, setCustomItems] = useState<any[]>([]);
+  const [unclassifiedItems, setUnclassifiedItems] = useState<any[]>([]);
   const [conceptTypes, setConceptTypes] = useState<ConceptType[]>([]);
+  const loggedUser = useAuthStore((s) => s.user);
 
   const loadData = useCallback(async () => {
-    const [decl, assetsRes, incomesRes, liabilitiesRes, customRes, types] = await Promise.all([
+    const [decl, assetsRes, incomesRes, liabilitiesRes, customRes, unclassifiedRes, types] = await Promise.all([
       declarationService.findOne(declarationId),
       assetService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
       incomeService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
       liabilityService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
       customItemService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      // Solo para el reporte completo (la pestaña sigue siendo solo admin)
+      unclassifiedItemService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
       conceptTypeService.findAll(),
     ]);
     setDeclaration(decl);
@@ -46,6 +53,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
     setIncomes(incomesRes.incomes);
     setLiabilities(liabilitiesRes.liabilities);
     setCustomItems(customRes.items);
+    setUnclassifiedItems(unclassifiedRes.items);
     setConceptTypes(types);
   }, [declarationId]);
 
@@ -76,6 +84,28 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
   const customItemsByType = (conceptTypeId: string) =>
     customItems.filter((item) => item.conceptType?.id === conceptTypeId);
 
+  const report = useMemo(
+    () =>
+      loading || !declaration
+        ? null
+        : buildDeclarationReport({
+            clientName: loggedUser?.fullName ?? '',
+            documentNumber: loggedUser?.documentNumber ?? '',
+            email: loggedUser?.email,
+            phone: loggedUser?.phoneNumber,
+            taxableYear: declaration.taxableYear,
+            status: declaration.status === 'COMPLETED' ? 'Finalizada' : 'Pendiente',
+            description: declaration.description,
+            assets,
+            incomes,
+            liabilities,
+            customItems,
+            customTypeNames: Object.fromEntries(conceptTypes.map((t) => [t.id, t.name])),
+            unclassifiedItems,
+          }),
+    [loading, declaration, loggedUser, assets, incomes, liabilities, customItems, unclassifiedItems, conceptTypes],
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -103,6 +133,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
           <h1 className="text-3xl font-bold tracking-tight">Declaración {declaration.taxableYear}</h1>
           <p className="text-muted-foreground">Revisa los datos de tu declaración de renta</p>
         </div>
+        <DeclarationReportButtons report={report} />
       </div>
 
       <Tabs defaultValue="assets" className="space-y-4">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Loader2, ArrowLeft, Trash2, Building2, TrendingUp, CreditCard, TriangleAlert, FileText, Shapes, Settings2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { assetService, incomeService, liabilityService, customItemService, unclassifiedItemService } from '@/services';
@@ -24,6 +25,8 @@ import { MoveItemDialog } from './MoveItemDialog';
 import { ConceptTypesManagerDialog } from './ConceptTypesManagerDialog';
 import { FinancialDataTabPanel } from './FinancialDataTabPanel';
 import { ObservationsCard } from './ObservationsCard';
+import { DeclarationReportButtons } from '@/shared/components/declaration-report-buttons';
+import { buildDeclarationReport } from '@/lib/declaration-report';
 import { useAdminDeclaration } from '../hooks/useAdminDeclaration';
 
 interface DeclarationDetailAdminPageProps {
@@ -37,6 +40,31 @@ const toAmount = (amount: unknown): number =>
 export function DeclarationDetailAdminPage({ declarationId, customerId }: DeclarationDetailAdminPageProps) {
   const router = useRouter();
   const ctx = useAdminDeclaration(declarationId, customerId);
+
+  // Reporte completo con los datos ya cargados (sin requests extra).
+  // Antes de los early returns: los hooks no pueden ser condicionales.
+  const report = useMemo(
+    () =>
+      ctx.loading || !ctx.declaration
+        ? null
+        : buildDeclarationReport({
+            clientName: ctx.client?.fullName ?? '',
+            documentNumber: ctx.client?.documentNumber ?? '',
+            email: ctx.client?.email,
+            phone: ctx.client?.phoneNumber,
+            taxableYear: ctx.declaration.taxableYear,
+            status:
+              ctx.declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente',
+            description: ctx.observations || ctx.declaration.description,
+            assets: ctx.assets,
+            incomes: ctx.incomes,
+            liabilities: ctx.liabilities,
+            customItems: ctx.customItems,
+            customTypeNames: Object.fromEntries(ctx.conceptTypes.map((t) => [t.id, t.name])),
+            unclassifiedItems: ctx.unclassifiedItems,
+          }),
+    [ctx],
+  );
 
   if (ctx.loading) {
     return (
@@ -83,7 +111,8 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
             Administra los datos de la declaración de renta
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <DeclarationReportButtons report={report} />
           <Badge
             variant={ctx.declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
             className={
