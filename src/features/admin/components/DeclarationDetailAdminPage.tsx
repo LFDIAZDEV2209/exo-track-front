@@ -111,8 +111,27 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
 
   const incomeSubtypes = ctx.subtypesByScope('income');
   const activeIncomeSubtypes = incomeSubtypes.filter((s) => s.isActive);
-  const subtypeCounts = Object.fromEntries(
-    incomeSubtypes.map((s) => [s.id, ctx.subtypeCountById(s.id, ctx.incomes)]),
+  const assetSubtypes = ctx.subtypesByScope('asset');
+  const activeAssetSubtypes = assetSubtypes.filter((s) => s.isActive);
+  const liabilitySubtypes = ctx.subtypesByScope('liability');
+  const activeLiabilitySubtypes = liabilitySubtypes.filter((s) => s.isActive);
+  // Conteo de usos por subtipo según el ámbito del manager abierto
+  const managerScope = ctx.subtypesManagerScope;
+  const managerTypes = managerScope
+    ? managerScope.scope === 'custom' && managerScope.conceptTypeId
+      ? ctx.subtypesByScope('custom', managerScope.conceptTypeId)
+      : ctx.subtypesByScope(managerScope.scope)
+    : [];
+  const managerList =
+    !managerScope || managerScope.scope === 'income'
+      ? ctx.incomes
+      : managerScope.scope === 'asset'
+        ? ctx.assets
+        : managerScope.scope === 'liability'
+          ? ctx.liabilities
+          : ctx.customItems.filter((i) => i.conceptType?.id === managerScope.conceptTypeId);
+  const managerCounts = Object.fromEntries(
+    managerTypes.map((s) => [s.id, ctx.subtypeCountById(s.id, managerList)]),
   );
 
   return (
@@ -201,6 +220,8 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
             title="Patrimonios"
             totalFormatted={formatCurrency(ctx.totalAssets)}
             items={ctx.assets}
+            subtypes={assetSubtypes}
+            onManageSubtypes={() => ctx.setSubtypesManagerScope({ scope: 'asset', label: 'patrimonios' })}
             onEdit={ctx.handleEditAsset}
             onDelete={ctx.handleDeleteAsset}
             onMove={ctx.handleMoveAsset}
@@ -231,6 +252,8 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
             title="Deudas"
             totalFormatted={formatCurrency(ctx.totalLiabilities)}
             items={ctx.liabilities}
+            subtypes={liabilitySubtypes}
+            onManageSubtypes={() => ctx.setSubtypesManagerScope({ scope: 'liability', label: 'deudas' })}
             onEdit={ctx.handleEditLiability}
             onDelete={ctx.handleDeleteLiability}
             onMove={ctx.handleMoveLiability}
@@ -246,6 +269,10 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
               title={type.name}
               totalFormatted={formatCurrency(ctx.customTotalByType(type.id))}
               items={ctx.customItemsByType(type.id)}
+              subtypes={ctx.subtypesByScope('custom', type.id)}
+              onManageSubtypes={() =>
+                ctx.setSubtypesManagerScope({ scope: 'custom', label: type.name, conceptTypeId: type.id })
+              }
               onEdit={ctx.handleEditCustomItem}
               onDelete={ctx.handleDeleteCustomItem}
               onMove={ctx.handleMoveCustomItem}
@@ -280,6 +307,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
       />
 
       <ItemFormDialog
+        key={ctx.editingAsset ? `asset-${ctx.editingAsset.id}` : 'asset-new'}
         open={ctx.assetFormOpen}
         onOpenChange={(open) => {
           ctx.setAssetFormOpen(open);
@@ -287,11 +315,13 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         }}
         onSuccess={() => ctx.loadItems()}
         itemType="asset"
+        subtypes={activeAssetSubtypes}
         declarationId={declarationId}
         editingItem={ctx.editingAsset ? {
           id: ctx.editingAsset.id,
           concept: ctx.editingAsset.concept,
           amount: toAmount(ctx.editingAsset.amount),
+          subtypeId: ctx.editingAsset.subtype?.id ?? null,
         } : null}
         createService={assetService.create}
         updateService={assetService.update}
@@ -349,6 +379,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
       )}
 
       <ItemFormDialog
+        key={ctx.editingLiability ? `liability-${ctx.editingLiability.id}` : 'liability-new'}
         open={ctx.liabilityFormOpen}
         onOpenChange={(open) => {
           ctx.setLiabilityFormOpen(open);
@@ -356,11 +387,13 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         }}
         onSuccess={() => ctx.loadItems()}
         itemType="liability"
+        subtypes={activeLiabilitySubtypes}
         declarationId={declarationId}
         editingItem={ctx.editingLiability ? {
           id: ctx.editingLiability.id,
           concept: ctx.editingLiability.concept,
           amount: toAmount(ctx.editingLiability.amount),
+          subtypeId: ctx.editingLiability.subtype?.id ?? null,
         } : null}
         createService={liabilityService.create}
         updateService={liabilityService.update}
@@ -382,6 +415,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
       )}
 
       <ItemFormDialog
+        key={ctx.editingCustomItem ? `custom-${ctx.editingCustomItem.id}` : `custom-new-${ctx.customFormTypeId ?? 'none'}`}
         open={ctx.customFormOpen}
         onOpenChange={(open) => {
           ctx.setCustomFormOpen(open);
@@ -394,11 +428,13 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         itemType="custom"
         customTypeLabel={customFormType?.name}
         extraCreateFields={ctx.customFormTypeId ? { conceptTypeId: ctx.customFormTypeId } : undefined}
+        subtypes={ctx.customFormTypeId ? ctx.subtypesByScope('custom', ctx.customFormTypeId).filter((s) => s.isActive) : []}
         declarationId={declarationId}
         editingItem={ctx.editingCustomItem ? {
           id: ctx.editingCustomItem.id,
           concept: ctx.editingCustomItem.concept,
           amount: toAmount(ctx.editingCustomItem.amount),
+          subtypeId: ctx.editingCustomItem.subtype?.id ?? null,
         } : null}
         createService={customItemService.create}
         updateService={customItemService.update}
@@ -461,15 +497,16 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
 
       {ctx.subtypesManagerScope && (
         <SubtypesManagerDialog
-          key={`subtypes-${ctx.subtypesManagerScope.scope}`}
+          key={`subtypes-${ctx.subtypesManagerScope.scope}-${ctx.subtypesManagerScope.conceptTypeId ?? 'sys'}`}
           open={ctx.subtypesManagerScope !== null}
           onOpenChange={(open) => {
             if (!open) ctx.setSubtypesManagerScope(null);
           }}
           scope={ctx.subtypesManagerScope.scope}
           scopeLabel={ctx.subtypesManagerScope.label}
-          types={incomeSubtypes}
-          itemsCountBySubtype={subtypeCounts}
+          conceptTypeId={ctx.subtypesManagerScope.conceptTypeId}
+          types={managerTypes}
+          itemsCountBySubtype={managerCounts}
           onChanged={async () => {
             await Promise.all([ctx.loadSubtypes(), ctx.loadItems()]);
           }}

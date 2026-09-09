@@ -8,6 +8,8 @@ export interface ExogenaItem {
   reporterName: string;
   reporterNit: string;
   sourceDetail: string;
+  /** Subtipo asignado en revisión (scope según category). Se envía al crear. */
+  subtypeId?: string;
 }
 
 export interface ExogenaParseResult {

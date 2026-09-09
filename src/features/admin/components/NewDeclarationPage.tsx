@@ -8,9 +8,9 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { declarationSchema, type DeclarationFormData } from '@/lib/validations';
-import { declarationService, userService } from '@/services';
+import { declarationService, userService, conceptSubtypeService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { DeclarationStatus } from '@/types';
+import { DeclarationStatus, type ConceptSubtype } from '@/types';
 import { Loader2, ArrowLeft, FilePlus, Info, Calendar, Upload, FileUp, XCircle, FileSpreadsheet } from 'lucide-react';
 import { FileUpload } from '@/shared/layout/file-upload';
 import { ExogenaImportReview } from './ExogenaImportReview';
@@ -38,16 +38,20 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
   const [parsedFile, setParsedFile] = useState<ExogenaParseResult | null>(null);
   const [reviewItems, setReviewItems] = useState<ExogenaItem[]>([]);
   const [isReviewing, setIsReviewing] = useState(false);
+  // Subtipos activos para asignar durante la revisión (una sola carga)
+  const [subtypes, setSubtypes] = useState<ConceptSubtype[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientData, taxableYears] = await Promise.all([
+        const [clientData, taxableYears, activeSubtypes] = await Promise.all([
           userService.findOne(customerId),
           declarationService.getTaxableYearsByUser(customerId),
+          conceptSubtypeService.findAll({ isActive: true }),
         ]);
         setClient(clientData);
         setExistingYears(taxableYears);
+        setSubtypes(activeSubtypes);
       } catch (error) {
         console.error('Error loading data:', error);
       }
@@ -236,6 +240,7 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
       concept: item.concept.trim(),
       amount: item.amount,
       sourceDetail: item.sourceDetail || undefined,
+      ...(item.subtypeId ? { subtypeId: item.subtypeId } : {}),
     });
 
     const assets = reviewItems
@@ -314,6 +319,7 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
         onBack={handleBackToForm}
         onConfirm={handleConfirmImport}
         isSubmitting={isLoading}
+        subtypes={subtypes}
       />
     );
   }

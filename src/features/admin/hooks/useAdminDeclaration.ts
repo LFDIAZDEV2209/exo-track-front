@@ -86,6 +86,7 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
   const [subtypesManagerScope, setSubtypesManagerScope] = useState<{
     scope: 'income' | 'asset' | 'liability' | 'custom';
     label: string;
+    conceptTypeId?: string;
   } | null>(null);
 
   const loadItems = useCallback(async () => {

@@ -20,6 +20,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency } from '@/lib/utils';
 import { SourceDetailView } from '@/shared/components/source-detail-view';
 import type { ExogenaCategory, ExogenaItem } from '@/lib/exogena-parser';
+import type { ConceptSubtype, ItemScope } from '@/types';
+
+const CATEGORY_SCOPE: Record<ExogenaCategory, ItemScope | null> = {
+  asset: 'asset',
+  income: 'income',
+  liability: 'liability',
+  unclassified: null,
+};
 
 const CATEGORY_OPTIONS: { value: ExogenaCategory; label: string }[] = [
   { value: 'income', label: 'Ingreso' },
@@ -69,6 +77,8 @@ interface ExogenaImportReviewProps {
   onBack: () => void;
   onConfirm: () => void;
   isSubmitting: boolean;
+  /** Subtipos activos para asignar por fila (una sola carga del padre) */
+  subtypes?: ConceptSubtype[];
 }
 
 export function ExogenaImportReview({
@@ -81,6 +91,7 @@ export function ExogenaImportReview({
   onBack,
   onConfirm,
   isSubmitting,
+  subtypes = [],
 }: ExogenaImportReviewProps) {
   const { byCategory, totalIncluded, totalAmount } = useMemo(() => {
     const byCategory = new Map<ExogenaCategory, ExogenaItem[]>();
@@ -102,6 +113,21 @@ export function ExogenaImportReview({
 
   const updateItem = (id: string, patch: Partial<ExogenaItem>) => {
     onItemsChange(items.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  };
+
+  // Al cambiar de categoría, el subtipo anterior (de otro ámbito) se descarta
+  const updateCategory = (id: string, category: ExogenaCategory) => {
+    onItemsChange(
+      items.map((item) =>
+        item.id === id ? { ...item, category, subtypeId: undefined } : item,
+      ),
+    );
+  };
+
+  const subtypesFor = (category: ExogenaCategory): ConceptSubtype[] => {
+    const scope = CATEGORY_SCOPE[category];
+    if (!scope) return [];
+    return subtypes.filter((s) => s.scope === scope);
   };
 
   const removeItem = (id: string) => {
@@ -166,8 +192,9 @@ export function ExogenaImportReview({
       <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-sm text-emerald-800 dark:text-emerald-200">
         <CheckCircle2 className="h-5 w-5 shrink-0" />
         <p>
-          Edita el <strong>concepto</strong>, el <strong>valor</strong> y la <strong>categoría</strong> de cada
-          registro si es necesario. Los registros sin clasificar no se incluirán en la declaración.
+          Edita el <strong>concepto</strong>, el <strong>valor</strong>, la <strong>categoría</strong> y
+          el <strong>subtipo</strong> de cada registro si es necesario. Lo sin clasificar se guarda
+          en la pestaña “Sin catalogar” para revisarlo después.
         </p>
       </div>
 
@@ -227,6 +254,29 @@ export function ExogenaImportReview({
                       {item.sourceDetail && (
                         <SourceDetailView value={item.sourceDetail} compact />
                       )}
+                      {subtypesFor(item.category).length > 0 && (
+                        <Select
+                          value={item.subtypeId ?? 'none'}
+                          onValueChange={(value) =>
+                            updateItem(item.id, { subtypeId: value === 'none' ? undefined : value })
+                          }
+                        >
+                          <SelectTrigger
+                            className="h-8 text-xs bg-violet-500/5 border-violet-500/20"
+                            aria-label="Subtipo del registro"
+                          >
+                            <SelectValue placeholder="Subtipo (opcional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Sin subtipo</SelectItem>
+                            {subtypesFor(item.category).map((subtype) => (
+                              <SelectItem key={subtype.id} value={subtype.id}>
+                                {subtype.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                     <Input
                       type="text"
@@ -249,7 +299,7 @@ export function ExogenaImportReview({
                     />
                     <Select
                       value={item.category}
-                      onValueChange={(value) => updateItem(item.id, { category: value as ExogenaCategory })}
+                      onValueChange={(value) => updateCategory(item.id, value as ExogenaCategory)}
                     >
                       <SelectTrigger aria-label="Categoría">
                         <SelectValue />

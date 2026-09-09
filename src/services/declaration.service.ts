@@ -22,6 +22,7 @@ export interface ExogenaItemRequest {
   sourceDetail?: string;
   reporterName?: string;
   reporterNit?: string;
+  subtypeId?: string;
 }
 
 export interface CreateFromExogenaRequest {
