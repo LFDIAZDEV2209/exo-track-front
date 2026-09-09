@@ -15,7 +15,7 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
-import { Loader2, Building2, TrendingUp, CreditCard, FileText, DollarSign, Save } from 'lucide-react';
+import { Loader2, Building2, TrendingUp, CreditCard, FileText, DollarSign, Save, Shapes } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 
@@ -36,14 +36,18 @@ interface ItemFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (wasCreated: boolean) => void;
-  itemType: 'asset' | 'income' | 'liability';
+  itemType: 'asset' | 'income' | 'liability' | 'custom';
+  /** Etiqueta del tipo personalizado (solo cuando itemType === 'custom') */
+  customTypeLabel?: string;
+  /** Campos extra para el create (ej. { conceptTypeId } en personalizados) */
+  extraCreateFields?: Record<string, unknown>;
   declarationId: string;
   editingItem?: {
     id: string;
     concept: string;
     amount: number;
   } | null;
-  createService: (data: { declarationId: string; concept: string; amount: number }) => Promise<any>;
+  createService: (data: any) => Promise<any>;
   updateService: (id: string, data: { concept?: string; amount?: number }) => Promise<any>;
 }
 
@@ -52,6 +56,8 @@ export function ItemFormDialog({
   onOpenChange,
   onSuccess,
   itemType,
+  customTypeLabel,
+  extraCreateFields,
   declarationId,
   editingItem,
   createService,
@@ -101,6 +107,7 @@ export function ItemFormDialog({
           declarationId,
           concept: data.concept,
           amount: amount,
+          ...extraCreateFields,
         });
         toast({
           title: 'Registro creado',
@@ -132,6 +139,8 @@ export function ItemFormDialog({
         return 'Ingreso';
       case 'liability':
         return 'Deuda';
+      case 'custom':
+        return customTypeLabel || 'Registro';
       default:
         return 'Registro';
     }
@@ -147,6 +156,7 @@ export function ItemFormDialog({
                 {itemType === 'asset' && <Building2 className="h-5 w-5 text-white" />}
                 {itemType === 'income' && <TrendingUp className="h-5 w-5 text-white" />}
                 {itemType === 'liability' && <CreditCard className="h-5 w-5 text-white" />}
+                {itemType === 'custom' && <Shapes className="h-5 w-5 text-white" />}
               </div>
               <div>
                 <DialogTitle className="font-bold text-white">

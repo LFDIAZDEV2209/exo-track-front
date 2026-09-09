@@ -247,8 +247,16 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
     const liabilities = reviewItems
       .filter((item) => item.category === 'liability' && item.concept.trim() && item.amount > 0)
       .map(sanitize);
+    // Lo no clasificado también se persiste (pestaña "Sin catalogar"), nunca se pierde
+    const unclassified = reviewItems
+      .filter((item) => item.category === 'unclassified' && item.concept.trim() && item.amount > 0)
+      .map((item) => ({
+        ...sanitize(item),
+        reporterName: item.reporterName?.trim() || undefined,
+        reporterNit: item.reporterNit?.trim() || undefined,
+      }));
 
-    if (assets.length + incomes.length + liabilities.length === 0) {
+    if (assets.length + incomes.length + liabilities.length + unclassified.length === 0) {
       toast({
         title: 'No hay registros válidos',
         description: 'Clasifica al menos un registro en Ingresos, Patrimonio o Deudas para crear la declaración.',
@@ -266,11 +274,16 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
         assets,
         incomes,
         liabilities,
+        unclassified,
       });
 
+      const unclassifiedMsg =
+        response.counts.unclassified > 0
+          ? ` Quedaron ${response.counts.unclassified} sin catalogar para revisar.`
+          : '';
       toast({
         title: 'Declaración creada desde exógena',
-        description: `Se importaron ${response.counts.assets} patrimonios, ${response.counts.incomes} ingresos y ${response.counts.liabilities} deudas.`,
+        description: `Se importaron ${response.counts.assets} patrimonios, ${response.counts.incomes} ingresos y ${response.counts.liabilities} deudas.${unclassifiedMsg}`,
       });
 
       router.push(`/admin/customers/${customerId}/declarations/${response.declaration.id}`);

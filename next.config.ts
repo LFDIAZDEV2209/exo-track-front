@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Fija la raíz de Turbopack: sin esto, Next infiere C:\Users\Luis como raíz
+  // (por un package-lock.json ajeno en el home) y el primer compile muere
+  // intentando rastrear todo el directorio personal.
+  turbopack: {
+    root: __dirname,
+  },
   async rewrites() {
     return [
       {

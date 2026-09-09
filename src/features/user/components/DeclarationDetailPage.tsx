@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Loader2, Building2, TrendingUp, CreditCard, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, Building2, TrendingUp, CreditCard, MessageSquare, Shapes } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
-import { declarationService, incomeService, assetService, liabilityService } from '@/services';
+import { declarationService, incomeService, assetService, liabilityService, conceptTypeService, customItemService } from '@/services';
+import type { ConceptType } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { FinancialDataTabPanel } from '@/features/admin/components/FinancialDataTabPanel';
@@ -14,6 +15,13 @@ interface DeclarationDetailPageProps {
   declarationId: string;
 }
 
+const FULL_LIST_LIMIT = 1000;
+
+const toNumber = (value: unknown): number => {
+  const num = typeof value === 'string' ? parseFloat(value) : (value as number);
+  return Number.isFinite(num) ? num : 0;
+};
+
 export function DeclarationDetailPage({ declarationId }: DeclarationDetailPageProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -21,107 +29,31 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
   const [incomes, setIncomes] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [liabilities, setLiabilities] = useState<any[]>([]);
+  const [customItems, setCustomItems] = useState<any[]>([]);
+  const [conceptTypes, setConceptTypes] = useState<ConceptType[]>([]);
 
-  const [assetsPage, setAssetsPage] = useState(1);
-  const [assetsTotal, setAssetsTotal] = useState(0);
-  const [assetsTotalPages, setAssetsTotalPages] = useState(0);
-
-  const [incomesPage, setIncomesPage] = useState(1);
-  const [incomesTotal, setIncomesTotal] = useState(0);
-  const [incomesTotalPages, setIncomesTotalPages] = useState(0);
-
-  const [liabilitiesPage, setLiabilitiesPage] = useState(1);
-  const [liabilitiesTotal, setLiabilitiesTotal] = useState(0);
-  const [liabilitiesTotalPages, setLiabilitiesTotalPages] = useState(0);
-
-  const [allAssets, setAllAssets] = useState<any[]>([]);
-  const [allIncomes, setAllIncomes] = useState<any[]>([]);
-  const [allLiabilities, setAllLiabilities] = useState<any[]>([]);
-
-  const fetchAssets = useCallback(async (page: number) => {
-    try {
-      const offset = (page - 1) * 10;
-      const response = await assetService.findAllWithPagination({ limit: 10, offset }, declarationId);
-      const limitedAssets = Array.isArray(response.assets) ? response.assets.slice(0, 10) : [];
-      setAssets(limitedAssets);
-      setAssetsTotal(response.total);
-      setAssetsTotalPages(Math.ceil(response.total / 10));
-      if (page === 1 && response.total > 0) {
-        const allAssetsResponse = await assetService.findAllWithPagination({ limit: response.total, offset: 0 }, declarationId);
-        setAllAssets(allAssetsResponse.assets);
-      } else if (page === 1) {
-        setAllAssets([]);
-      }
-    } catch (error) {
-      console.error('Error loading assets:', error);
-    }
+  const loadData = useCallback(async () => {
+    const [decl, assetsRes, incomesRes, liabilitiesRes, customRes, types] = await Promise.all([
+      declarationService.findOne(declarationId),
+      assetService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      incomeService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      liabilityService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      customItemService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      conceptTypeService.findAll(),
+    ]);
+    setDeclaration(decl);
+    setAssets(assetsRes.assets);
+    setIncomes(incomesRes.incomes);
+    setLiabilities(liabilitiesRes.liabilities);
+    setCustomItems(customRes.items);
+    setConceptTypes(types);
   }, [declarationId]);
-
-  const fetchIncomes = useCallback(async (page: number) => {
-    try {
-      const offset = (page - 1) * 10;
-      const response = await incomeService.findAllWithPagination({ limit: 10, offset }, declarationId);
-      const limitedIncomes = Array.isArray(response.incomes) ? response.incomes.slice(0, 10) : [];
-      setIncomes(limitedIncomes);
-      setIncomesTotal(response.total);
-      setIncomesTotalPages(Math.ceil(response.total / 10));
-      if (page === 1 && response.total > 0) {
-        const allIncomesResponse = await incomeService.findAllWithPagination({ limit: response.total, offset: 0 }, declarationId);
-        setAllIncomes(allIncomesResponse.incomes);
-      } else if (page === 1) {
-        setAllIncomes([]);
-      }
-    } catch (error) {
-      console.error('Error loading incomes:', error);
-    }
-  }, [declarationId]);
-
-  const fetchLiabilities = useCallback(async (page: number) => {
-    try {
-      const offset = (page - 1) * 10;
-      const response = await liabilityService.findAllWithPagination({ limit: 10, offset }, declarationId);
-      const limitedLiabilities = Array.isArray(response.liabilities) ? response.liabilities.slice(0, 10) : [];
-      setLiabilities(limitedLiabilities);
-      setLiabilitiesTotal(response.total);
-      setLiabilitiesTotalPages(Math.ceil(response.total / 10));
-      if (page === 1 && response.total > 0) {
-        const allLiabilitiesResponse = await liabilityService.findAllWithPagination({ limit: response.total, offset: 0 }, declarationId);
-        setAllLiabilities(allLiabilitiesResponse.liabilities);
-      } else if (page === 1) {
-        setAllLiabilities([]);
-      }
-    } catch (error) {
-      console.error('Error loading liabilities:', error);
-    }
-  }, [declarationId]);
-
-  const handleAssetsPageChange = (newPage: number) => {
-    setAssetsPage(newPage);
-    fetchAssets(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleIncomesPageChange = (newPage: number) => {
-    setIncomesPage(newPage);
-    fetchIncomes(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleLiabilitiesPageChange = (newPage: number) => {
-    setLiabilitiesPage(newPage);
-    fetchLiabilities(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
-        const decl = await declarationService.findOne(declarationId);
-        setDeclaration(decl);
-        fetchAssets(1);
-        fetchIncomes(1);
-        fetchLiabilities(1);
+        await loadData();
       } catch (error) {
         console.error('Error loading declaration:', error);
       } finally {
@@ -130,22 +62,19 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
     };
 
     fetchInitialData();
-  }, [declarationId, fetchAssets, fetchIncomes, fetchLiabilities]);
+  }, [loadData]);
 
-  const totalAssets = allAssets.reduce((sum, ast) => {
-    const amount = typeof ast.amount === 'string' ? parseFloat(ast.amount) : ast.amount;
-    return sum + (amount || 0);
-  }, 0);
+  const sumAmounts = (list: any[]) => list.reduce((sum, item) => sum + toNumber(item.amount), 0);
+  const totalAssets = sumAmounts(assets);
+  const totalIncomes = sumAmounts(incomes);
+  const totalLiabilities = sumAmounts(liabilities);
 
-  const totalIncomes = allIncomes.reduce((sum, inc) => {
-    const amount = typeof inc.amount === 'string' ? parseFloat(inc.amount) : inc.amount;
-    return sum + (amount || 0);
-  }, 0);
-
-  const totalLiabilities = allLiabilities.reduce((sum, liab) => {
-    const amount = typeof liab.amount === 'string' ? parseFloat(liab.amount) : liab.amount;
-    return sum + (amount || 0);
-  }, 0);
+  // El usuario solo ve tipos con registros en su declaración (sin importar si están activos)
+  const visibleCustomTypes = conceptTypes.filter((type) =>
+    customItems.some((item) => item.conceptType?.id === type.id),
+  );
+  const customItemsByType = (conceptTypeId: string) =>
+    customItems.filter((item) => item.conceptType?.id === conceptTypeId);
 
   if (loading) {
     return (
@@ -166,7 +95,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Volver">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-emerald-400 rounded-full" />
@@ -177,7 +106,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
       </div>
 
       <Tabs defaultValue="assets" className="space-y-4">
-        <TabsList className="bg-muted/50 p-1 rounded-xl">
+        <TabsList className="bg-muted/50 p-1 rounded-xl flex-wrap h-auto">
           <TabsTrigger value="assets" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
             <Building2 className="h-4 w-4 mr-2" /> Patrimonios
           </TabsTrigger>
@@ -187,6 +116,15 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
           <TabsTrigger value="liabilities" className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold">
             <CreditCard className="h-4 w-4 mr-2" /> Deudas
           </TabsTrigger>
+          {visibleCustomTypes.map((type) => (
+            <TabsTrigger
+              key={type.id}
+              value={`custom-${type.id}`}
+              className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 font-bold"
+            >
+              <Shapes className="h-4 w-4 mr-2" /> {type.name}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="assets" className="space-y-4">
@@ -194,11 +132,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
             icon={<Building2 className="h-5 w-5 text-white" />}
             title="Patrimonios"
             totalFormatted={formatCurrency(totalAssets)}
-            data={assets}
-            currentPage={assetsPage}
-            totalPages={assetsTotalPages}
-            totalItems={assetsTotal}
-            onPageChange={handleAssetsPageChange}
+            items={assets}
             readOnly
           />
         </TabsContent>
@@ -208,11 +142,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
             icon={<TrendingUp className="h-5 w-5 text-white" />}
             title="Ingresos"
             totalFormatted={formatCurrency(totalIncomes)}
-            data={incomes}
-            currentPage={incomesPage}
-            totalPages={incomesTotalPages}
-            totalItems={incomesTotal}
-            onPageChange={handleIncomesPageChange}
+            items={incomes}
             readOnly
           />
         </TabsContent>
@@ -222,14 +152,25 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
             icon={<CreditCard className="h-5 w-5 text-white" />}
             title="Deudas"
             totalFormatted={formatCurrency(totalLiabilities)}
-            data={liabilities}
-            currentPage={liabilitiesPage}
-            totalPages={liabilitiesTotalPages}
-            totalItems={liabilitiesTotal}
-            onPageChange={handleLiabilitiesPageChange}
+            items={liabilities}
             readOnly
           />
         </TabsContent>
+
+        {visibleCustomTypes.map((type) => {
+          const typeItems = customItemsByType(type.id);
+          return (
+            <TabsContent key={type.id} value={`custom-${type.id}`} className="space-y-4">
+              <FinancialDataTabPanel
+                icon={<Shapes className="h-5 w-5 text-white" />}
+                title={type.name}
+                totalFormatted={formatCurrency(sumAmounts(typeItems))}
+                items={typeItems}
+                readOnly
+              />
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
       {declaration.description && (

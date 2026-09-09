@@ -19,7 +19,9 @@ interface DeleteItemDialogProps {
   onOpenChange: (open: boolean) => void;
   itemId: string;
   itemConcept: string;
-  itemType: 'asset' | 'income' | 'liability';
+  itemType: 'asset' | 'income' | 'liability' | 'custom' | 'unclassified';
+  /** Etiqueta personalizada (ej. nombre del tipo). Si se pasa, prima sobre itemType. */
+  customTypeLabel?: string;
   onDeleted: () => void;
   deleteService: (id: string) => Promise<void>;
 }
@@ -30,6 +32,7 @@ export function DeleteItemDialog({
   itemId,
   itemConcept,
   itemType,
+  customTypeLabel,
   onDeleted,
   deleteService,
 }: DeleteItemDialogProps) {
@@ -66,6 +69,7 @@ export function DeleteItemDialog({
   };
 
   const getItemTypeLabel = () => {
+    if (customTypeLabel) return customTypeLabel.toLowerCase();
     switch (itemType) {
       case 'asset':
         return 'patrimonio';
@@ -73,6 +77,8 @@ export function DeleteItemDialog({
         return 'ingreso';
       case 'liability':
         return 'deuda';
+      case 'unclassified':
+        return 'registro sin catalogar';
       default:
         return 'registro';
     }

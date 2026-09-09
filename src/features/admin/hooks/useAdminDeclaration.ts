@@ -2,11 +2,29 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { declarationService, incomeService, assetService, liabilityService, userService } from '@/services';
+import {
+  declarationService,
+  incomeService,
+  assetService,
+  liabilityService,
+  userService,
+  conceptTypeService,
+  customItemService,
+  unclassifiedItemService,
+} from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { DeclarationStatus } from '@/types';
+import { DeclarationStatus, type ConceptType } from '@/types';
+import type { MoveItemTarget } from '../components/MoveItemDialog';
 
-const ITEMS_PER_PAGE = 10;
+// Tope de carga completa por colección: las pestañas filtran/ordenan/paginan
+// en cliente sobre esta lista (rápido, cero requests extra). Si una declaración
+// superara este volumen, el backend seguiría paginando sin romperse.
+const FULL_LIST_LIMIT = 1000;
+
+const toNumber = (value: unknown): number => {
+  const num = typeof value === 'string' ? parseFloat(value) : (value as number);
+  return Number.isFinite(num) ? num : 0;
+};
 
 export function useAdminDeclaration(declarationId: string, customerId: string) {
   const router = useRouter();
@@ -15,25 +33,13 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
   const [declaration, setDeclaration] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
 
-  const [incomes, setIncomes] = useState<any[]>([]);
+  // Listas completas por colección (una sola petición cada una)
   const [assets, setAssets] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<any[]>([]);
   const [liabilities, setLiabilities] = useState<any[]>([]);
-
-  const [assetsPage, setAssetsPage] = useState(1);
-  const [assetsTotal, setAssetsTotal] = useState(0);
-  const [assetsTotalPages, setAssetsTotalPages] = useState(0);
-
-  const [incomesPage, setIncomesPage] = useState(1);
-  const [incomesTotal, setIncomesTotal] = useState(0);
-  const [incomesTotalPages, setIncomesTotalPages] = useState(0);
-
-  const [liabilitiesPage, setLiabilitiesPage] = useState(1);
-  const [liabilitiesTotal, setLiabilitiesTotal] = useState(0);
-  const [liabilitiesTotalPages, setLiabilitiesTotalPages] = useState(0);
-
-  const [allAssets, setAllAssets] = useState<any[]>([]);
-  const [allIncomes, setAllIncomes] = useState<any[]>([]);
-  const [allLiabilities, setAllLiabilities] = useState<any[]>([]);
+  const [customItems, setCustomItems] = useState<any[]>([]);
+  const [unclassifiedItems, setUnclassifiedItems] = useState<any[]>([]);
+  const [conceptTypes, setConceptTypes] = useState<ConceptType[]>([]);
 
   const [observations, setObservations] = useState('');
   const [deleteDeclarationDialogOpen, setDeleteDeclarationDialogOpen] = useState(false);
@@ -54,98 +60,39 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
   const [deleteLiabilityDialogOpen, setDeleteLiabilityDialogOpen] = useState(false);
   const [liabilityToDelete, setLiabilityToDelete] = useState<{ id: string; concept: string } | null>(null);
 
-  const fetchAssets = useCallback(async (page: number) => {
-    try {
-      const offset = (page - 1) * ITEMS_PER_PAGE;
-      const response = await assetService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
+  // Ítems personalizados: el diálogo necesita el tipo activo
+  const [customFormOpen, setCustomFormOpen] = useState(false);
+  const [customFormTypeId, setCustomFormTypeId] = useState<string | null>(null);
+  const [editingCustomItem, setEditingCustomItem] = useState<any | null>(null);
+  const [deleteCustomDialogOpen, setDeleteCustomDialogOpen] = useState(false);
+  const [customToDelete, setCustomToDelete] = useState<{ id: string; concept: string; typeName: string } | null>(null);
 
-      const limitedAssets = Array.isArray(response.assets)
-        ? response.assets.slice(0, ITEMS_PER_PAGE)
-        : [];
+  // No catalogados: solo catalogar (mover) o descartar
+  const [deleteUnclassifiedDialogOpen, setDeleteUnclassifiedDialogOpen] = useState(false);
+  const [unclassifiedToDelete, setUnclassifiedToDelete] = useState<{ id: string; concept: string } | null>(null);
 
-      setAssets(limitedAssets);
-      setAssetsTotal(response.total);
-      setAssetsTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
+  // Mover / re-catalogar + gestionar tipos
+  const [moveTarget, setMoveTarget] = useState<MoveItemTarget | null>(null);
+  const [typesManagerOpen, setTypesManagerOpen] = useState(false);
 
-      if (page === 1 && response.total > 0) {
-        const allAssetsResponse = await assetService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllAssets(allAssetsResponse.assets);
-      } else if (page === 1) {
-        setAllAssets([]);
-      }
-      setAssetsPage(page);
-    } catch (error) {
-      console.error('Error loading assets:', error);
-    }
+  const loadItems = useCallback(async () => {
+    const [assetsRes, incomesRes, liabilitiesRes, customRes, unclassifiedRes] = await Promise.all([
+      assetService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      incomeService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      liabilityService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      customItemService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+      unclassifiedItemService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
+    ]);
+    setAssets(assetsRes.assets);
+    setIncomes(incomesRes.incomes);
+    setLiabilities(liabilitiesRes.liabilities);
+    setCustomItems(customRes.items);
+    setUnclassifiedItems(unclassifiedRes.items);
   }, [declarationId]);
 
-  const fetchIncomes = useCallback(async (page: number) => {
-    try {
-      const offset = (page - 1) * ITEMS_PER_PAGE;
-      const response = await incomeService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-
-      const limitedIncomes = Array.isArray(response.incomes)
-        ? response.incomes.slice(0, ITEMS_PER_PAGE)
-        : [];
-
-      setIncomes(limitedIncomes);
-      setIncomesTotal(response.total);
-      setIncomesTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
-
-      if (page === 1 && response.total > 0) {
-        const allIncomesResponse = await incomeService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllIncomes(allIncomesResponse.incomes);
-      } else if (page === 1) {
-        setAllIncomes([]);
-      }
-      setIncomesPage(page);
-    } catch (error) {
-      console.error('Error loading incomes:', error);
-    }
-  }, [declarationId]);
-
-  const fetchLiabilities = useCallback(async (page: number) => {
-    try {
-      const offset = (page - 1) * ITEMS_PER_PAGE;
-      const response = await liabilityService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-
-      const limitedLiabilities = Array.isArray(response.liabilities)
-        ? response.liabilities.slice(0, ITEMS_PER_PAGE)
-        : [];
-
-      setLiabilities(limitedLiabilities);
-      setLiabilitiesTotal(response.total);
-      setLiabilitiesTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
-
-      if (page === 1 && response.total > 0) {
-        const allLiabilitiesResponse = await liabilityService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllLiabilities(allLiabilitiesResponse.liabilities);
-      } else if (page === 1) {
-        setAllLiabilities([]);
-      }
-      setLiabilitiesPage(page);
-    } catch (error) {
-      console.error('Error loading liabilities:', error);
-    }
-  }, [declarationId]);
+  const loadTypes = useCallback(async () => {
+    setConceptTypes(await conceptTypeService.findAll());
+  }, []);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -160,9 +107,7 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
         setClient(clientData);
         setObservations(decl?.description || '');
 
-        fetchAssets(1);
-        fetchIncomes(1);
-        fetchLiabilities(1);
+        await Promise.all([loadItems(), loadTypes()]);
       } catch (error) {
         console.error('Error loading declaration:', error);
       } finally {
@@ -171,7 +116,12 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     };
 
     fetchInitialData();
-  }, [declarationId, customerId, fetchAssets, fetchIncomes, fetchLiabilities]);
+  }, [declarationId, customerId, loadItems, loadTypes]);
+
+  /** Recarga ítems + tipos tras mover/catalogar (afecta dos colecciones). */
+  const refreshAfterMove = useCallback(async () => {
+    await Promise.all([loadItems(), loadTypes()]);
+  }, [loadItems, loadTypes]);
 
   const handleFinalize = async () => {
     try {
@@ -243,169 +193,6 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     }
   };
 
-  const handleAssetsPageChange = (newPage: number) => {
-    fetchAssets(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleIncomesPageChange = (newPage: number) => {
-    fetchIncomes(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleLiabilitiesPageChange = (newPage: number) => {
-    fetchLiabilities(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const reloadAssets = async (resetToFirstPage: boolean = false) => {
-    try {
-      if (resetToFirstPage) {
-        setAssetsPage(1);
-      }
-
-      const currentPage = resetToFirstPage ? 1 : assetsPage;
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-
-      const response = await assetService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-
-      const limitedAssets = Array.isArray(response.assets)
-        ? response.assets.slice(0, ITEMS_PER_PAGE)
-        : [];
-
-      setAssets(limitedAssets);
-      setAssetsTotal(response.total);
-      const newTotalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
-      setAssetsTotalPages(newTotalPages);
-
-      if (!resetToFirstPage && newTotalPages > 0 && currentPage > newTotalPages) {
-        setAssetsPage(newTotalPages);
-        const newOffset = (newTotalPages - 1) * ITEMS_PER_PAGE;
-        const newResponse = await assetService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset: newOffset },
-          declarationId
-        );
-        const newLimitedAssets = Array.isArray(newResponse.assets)
-          ? newResponse.assets.slice(0, ITEMS_PER_PAGE)
-          : [];
-        setAssets(newLimitedAssets);
-      }
-
-      if (response.total > 0) {
-        const allAssetsResponse = await assetService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllAssets(allAssetsResponse.assets);
-      } else {
-        setAllAssets([]);
-      }
-    } catch (error) {
-      console.error('Error reloading assets:', error);
-    }
-  };
-
-  const reloadIncomes = async (resetToFirstPage: boolean = false) => {
-    try {
-      if (resetToFirstPage) {
-        setIncomesPage(1);
-      }
-
-      const currentPage = resetToFirstPage ? 1 : incomesPage;
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-      const response = await incomeService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-
-      const limitedIncomes = Array.isArray(response.incomes)
-        ? response.incomes.slice(0, ITEMS_PER_PAGE)
-        : [];
-
-      setIncomes(limitedIncomes);
-      setIncomesTotal(response.total);
-      const newTotalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
-      setIncomesTotalPages(newTotalPages);
-
-      if (!resetToFirstPage && newTotalPages > 0 && currentPage > newTotalPages) {
-        setIncomesPage(newTotalPages);
-        const newOffset = (newTotalPages - 1) * ITEMS_PER_PAGE;
-        const newResponse = await incomeService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset: newOffset },
-          declarationId
-        );
-        const newLimitedIncomes = Array.isArray(newResponse.incomes)
-          ? newResponse.incomes.slice(0, ITEMS_PER_PAGE)
-          : [];
-        setIncomes(newLimitedIncomes);
-      }
-
-      if (response.total > 0) {
-        const allIncomesResponse = await incomeService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllIncomes(allIncomesResponse.incomes);
-      } else {
-        setAllIncomes([]);
-      }
-    } catch (error) {
-      console.error('Error reloading incomes:', error);
-    }
-  };
-
-  const reloadLiabilities = async (resetToFirstPage: boolean = false) => {
-    try {
-      if (resetToFirstPage) {
-        setLiabilitiesPage(1);
-      }
-
-      const currentPage = resetToFirstPage ? 1 : liabilitiesPage;
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-      const response = await liabilityService.findAllWithPagination(
-        { limit: ITEMS_PER_PAGE, offset },
-        declarationId
-      );
-
-      const limitedLiabilities = Array.isArray(response.liabilities)
-        ? response.liabilities.slice(0, ITEMS_PER_PAGE)
-        : [];
-
-      setLiabilities(limitedLiabilities);
-      setLiabilitiesTotal(response.total);
-      const newTotalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
-      setLiabilitiesTotalPages(newTotalPages);
-
-      if (!resetToFirstPage && newTotalPages > 0 && currentPage > newTotalPages) {
-        setLiabilitiesPage(newTotalPages);
-        const newOffset = (newTotalPages - 1) * ITEMS_PER_PAGE;
-        const newResponse = await liabilityService.findAllWithPagination(
-          { limit: ITEMS_PER_PAGE, offset: newOffset },
-          declarationId
-        );
-        const newLimitedLiabilities = Array.isArray(newResponse.liabilities)
-          ? newResponse.liabilities.slice(0, ITEMS_PER_PAGE)
-          : [];
-        setLiabilities(newLimitedLiabilities);
-      }
-
-      if (response.total > 0) {
-        const allLiabilitiesResponse = await liabilityService.findAllWithPagination(
-          { limit: response.total, offset: 0 },
-          declarationId
-        );
-        setAllLiabilities(allLiabilitiesResponse.liabilities);
-      } else {
-        setAllLiabilities([]);
-      }
-    } catch (error) {
-      console.error('Error reloading liabilities:', error);
-    }
-  };
-
   const handleCreateAsset = () => {
     setEditingAsset(null);
     setAssetFormOpen(true);
@@ -469,20 +256,89 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     }
   };
 
-  const totalAssets = allAssets.reduce((sum, ast) => {
-    const amount = typeof ast.amount === 'string' ? parseFloat(ast.amount) : ast.amount;
-    return sum + (amount || 0);
-  }, 0);
+  const handleCreateCustomItem = (conceptTypeId: string) => {
+    setEditingCustomItem(null);
+    setCustomFormTypeId(conceptTypeId);
+    setCustomFormOpen(true);
+  };
 
-  const totalIncomes = allIncomes.reduce((sum, inc) => {
-    const amount = typeof inc.amount === 'string' ? parseFloat(inc.amount) : inc.amount;
-    return sum + (amount || 0);
-  }, 0);
+  const handleEditCustomItem = (id: string) => {
+    const item = customItems.find((c) => c.id === id);
+    if (item) {
+      setEditingCustomItem(item);
+      setCustomFormTypeId(item.conceptType?.id ?? null);
+      setCustomFormOpen(true);
+    }
+  };
 
-  const totalLiabilities = allLiabilities.reduce((sum, liab) => {
-    const amount = typeof liab.amount === 'string' ? parseFloat(liab.amount) : liab.amount;
-    return sum + (amount || 0);
-  }, 0);
+  const handleDeleteCustomItem = (id: string) => {
+    const item = customItems.find((c) => c.id === id);
+    if (item) {
+      setCustomToDelete({
+        id,
+        concept: item.concept,
+        typeName: item.conceptType?.name ?? 'personalizado',
+      });
+      setDeleteCustomDialogOpen(true);
+    }
+  };
+
+  const handleDeleteUnclassified = (id: string) => {
+    const item = unclassifiedItems.find((u) => u.id === id);
+    if (item) {
+      setUnclassifiedToDelete({ id, concept: item.concept });
+      setDeleteUnclassifiedDialogOpen(true);
+    }
+  };
+
+  const handleMoveAsset = (id: string) => {
+    const asset = assets.find((a) => a.id === id);
+    if (asset) setMoveTarget({ id, concept: asset.concept, amount: asset.amount, kind: 'asset' });
+  };
+
+  const handleMoveIncome = (id: string) => {
+    const income = incomes.find((i) => i.id === id);
+    if (income) setMoveTarget({ id, concept: income.concept, amount: income.amount, kind: 'income' });
+  };
+
+  const handleMoveLiability = (id: string) => {
+    const liability = liabilities.find((l) => l.id === id);
+    if (liability) setMoveTarget({ id, concept: liability.concept, amount: liability.amount, kind: 'liability' });
+  };
+
+  const handleMoveCustomItem = (id: string) => {
+    const item = customItems.find((c) => c.id === id);
+    if (item) {
+      setMoveTarget({
+        id,
+        concept: item.concept,
+        amount: item.amount,
+        kind: 'custom',
+        customTypeId: item.conceptType?.id,
+        customTypeName: item.conceptType?.name,
+      });
+    }
+  };
+
+  const handleMoveUnclassified = (id: string) => {
+    const item = unclassifiedItems.find((u) => u.id === id);
+    if (item) setMoveTarget({ id, concept: item.concept, amount: item.amount, kind: 'unclassified' });
+  };
+
+  const sumAmounts = (list: any[]) =>
+    list.reduce((sum, item) => sum + toNumber(item.amount), 0);
+
+  const totalAssets = sumAmounts(assets);
+  const totalIncomes = sumAmounts(incomes);
+  const totalLiabilities = sumAmounts(liabilities);
+  const totalUnclassified = sumAmounts(unclassifiedItems);
+
+  const customItemsByType = (conceptTypeId: string) =>
+    customItems.filter((item) => item.conceptType?.id === conceptTypeId);
+  const customTotalByType = (conceptTypeId: string) =>
+    sumAmounts(customItemsByType(conceptTypeId));
+  const customCountByType = (conceptTypeId: string) =>
+    customItemsByType(conceptTypeId).length;
 
   return {
     declaration,
@@ -491,18 +347,16 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     assets,
     incomes,
     liabilities,
-    assetsPage,
-    assetsTotal,
-    assetsTotalPages,
-    incomesPage,
-    incomesTotal,
-    incomesTotalPages,
-    liabilitiesPage,
-    liabilitiesTotal,
-    liabilitiesTotalPages,
+    customItems,
+    unclassifiedItems,
+    conceptTypes,
     totalAssets,
     totalIncomes,
     totalLiabilities,
+    totalUnclassified,
+    customItemsByType,
+    customTotalByType,
+    customCountByType,
     observations,
     setObservations,
     deleteDeclarationDialogOpen,
@@ -532,15 +386,30 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     setDeleteLiabilityDialogOpen,
     liabilityToDelete,
     setLiabilityToDelete,
+    customFormOpen,
+    setCustomFormOpen,
+    customFormTypeId,
+    setCustomFormTypeId,
+    editingCustomItem,
+    setEditingCustomItem,
+    deleteCustomDialogOpen,
+    setDeleteCustomDialogOpen,
+    customToDelete,
+    setCustomToDelete,
+    deleteUnclassifiedDialogOpen,
+    setDeleteUnclassifiedDialogOpen,
+    unclassifiedToDelete,
+    setUnclassifiedToDelete,
+    moveTarget,
+    setMoveTarget,
+    typesManagerOpen,
+    setTypesManagerOpen,
     handleFinalize,
     handleUpdateObservations,
     handleDeleteDeclaration,
-    handleAssetsPageChange,
-    handleIncomesPageChange,
-    handleLiabilitiesPageChange,
-    reloadAssets,
-    reloadIncomes,
-    reloadLiabilities,
+    loadItems,
+    loadTypes,
+    refreshAfterMove,
     handleCreateAsset,
     handleEditAsset,
     handleDeleteAsset,
@@ -550,5 +419,14 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     handleCreateLiability,
     handleEditLiability,
     handleDeleteLiability,
+    handleCreateCustomItem,
+    handleEditCustomItem,
+    handleDeleteCustomItem,
+    handleDeleteUnclassified,
+    handleMoveAsset,
+    handleMoveIncome,
+    handleMoveLiability,
+    handleMoveCustomItem,
+    handleMoveUnclassified,
   };
 }

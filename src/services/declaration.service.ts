@@ -20,6 +20,8 @@ export interface ExogenaItemRequest {
   concept: string;
   amount: number;
   sourceDetail?: string;
+  reporterName?: string;
+  reporterNit?: string;
 }
 
 export interface CreateFromExogenaRequest {
@@ -29,6 +31,23 @@ export interface CreateFromExogenaRequest {
   assets?: ExogenaItemRequest[];
   incomes?: ExogenaItemRequest[];
   liabilities?: ExogenaItemRequest[];
+  unclassified?: ExogenaItemRequest[];
+}
+
+export type MoveItemFromKind = 'asset' | 'income' | 'liability' | 'custom' | 'unclassified';
+export type MoveItemToKind = 'asset' | 'income' | 'liability' | 'custom';
+
+export interface MoveItemRequest {
+  itemId: string;
+  from: MoveItemFromKind;
+  to: MoveItemToKind;
+  customTypeId?: string;
+}
+
+export interface MoveItemResponse {
+  item: any;
+  from: MoveItemFromKind;
+  to: MoveItemToKind;
 }
 
 export interface UpdateDeclarationRequest {
@@ -133,9 +152,17 @@ export const declarationService = {
    */
   async createFromExogena(data: CreateFromExogenaRequest): Promise<{
     declaration: Declaration;
-    counts: { assets: number; incomes: number; liabilities: number };
+    counts: { assets: number; incomes: number; liabilities: number; unclassified: number };
   }> {
     return apiClient.post(API_ENDPOINTS.declarations.importExogena, data);
+  },
+
+  /**
+   * Mueve (re-cataloga) un ítem entre patrimonios/ingresos/deudas/tipos
+   * personalizados, o cataloga un no clasificado. Transacción atómica.
+   */
+  async moveItem(declarationId: string, data: MoveItemRequest): Promise<MoveItemResponse> {
+    return apiClient.post<MoveItemResponse>(API_ENDPOINTS.declarations.moveItem(declarationId), data);
   },
 
   /**

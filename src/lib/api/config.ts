@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
     findOne: (id: string) => `/declarations/${id}`,
     create: '/declarations',
     importExogena: '/declarations/from-exogena',
+    moveItem: (id: string) => `/declarations/${id}/move-item`,
     update: (id: string) => `/declarations/${id}`,
     remove: (id: string) => `/declarations/${id}`,
     stats: '/declarations/stats',
@@ -83,8 +84,7 @@ export const API_ENDPOINTS = {
     create: '/incomes',
     update: (id: string) => `/incomes/${id}`,
     remove: (id: string) => `/incomes/${id}`,
-  },
-  // Assets
+  },  // Assets
   assets: {
     findAll: (params?: { limit?: number; offset?: number; declarationId?: string }) => {
       const queryParams = new URLSearchParams();
@@ -111,6 +111,40 @@ export const API_ENDPOINTS = {
     create: '/liabilities',
     update: (id: string) => `/liabilities/${id}`,
     remove: (id: string) => `/liabilities/${id}`,
+  },
+  // Concept types (custom tabs defined by admin)
+  conceptTypes: {
+    findAll: '/concept-types',
+    create: '/concept-types',
+    update: (id: string) => `/concept-types/${id}`,
+    remove: (id: string) => `/concept-types/${id}`,
+  },
+  // Custom items (items under a custom concept type)
+  customItems: {
+    findAll: (params?: { limit?: number; offset?: number; declarationId?: string; conceptTypeId?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      if (params?.declarationId) queryParams.append('declarationId', params.declarationId);
+      if (params?.conceptTypeId) queryParams.append('conceptTypeId', params.conceptTypeId);
+      const query = queryParams.toString();
+      return `/custom-items${query ? `?${query}` : ''}`;
+    },
+    create: '/custom-items',
+    update: (id: string) => `/custom-items/${id}`,
+    remove: (id: string) => `/custom-items/${id}`,
+  },
+  // Unclassified items (exogenous concepts pending cataloging)
+  unclassifiedItems: {
+    findAll: (params?: { limit?: number; offset?: number; declarationId?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      if (params?.declarationId) queryParams.append('declarationId', params.declarationId);
+      const query = queryParams.toString();
+      return `/unclassified-items${query ? `?${query}` : ''}`;
+    },
+    remove: (id: string) => `/unclassified-items/${id}`,
   },
 };
 

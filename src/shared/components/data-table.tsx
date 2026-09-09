@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Trash2, FileText, DollarSign, Database, MoreHorizontal, Circle } from 'lucide-react';
+import { Pencil, Trash2, FileText, DollarSign, Database, MoreHorizontal, Circle, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
@@ -20,6 +20,9 @@ interface DataTableProps {
   data: DataTableItem[];
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  /** Mover/re-catalogar el ítem a otro tipo (abre el diálogo de destino) */
+  onMove?: (id: string) => void;
+  moveLabel?: string;
   readOnly?: boolean;
 }
 
@@ -43,7 +46,7 @@ const normalizeAmount = (amount: number | string): number => {
   return amount;
 };
 
-export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTableProps) {
+export function DataTable({ data, onEdit, onDelete, onMove, moveLabel = 'Mover a otro tipo', readOnly = false }: DataTableProps) {
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -95,9 +98,22 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(item.id)}
+                        aria-label={`Editar ${item.concept}`}
                         className="transition-transform duration-150 hover:scale-110"
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {!readOnly && onMove && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onMove(item.id)}
+                        aria-label={`${moveLabel}: ${item.concept}`}
+                        title={moveLabel}
+                        className="transition-transform duration-150 hover:scale-110 hover:text-emerald-600"
+                      >
+                        <ArrowRightLeft className="h-4 w-4" />
                       </Button>
                     )}
                     {onDelete && (
@@ -105,6 +121,7 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
                         variant="ghost"
                         size="icon"
                         onClick={() => onDelete(item.id)}
+                        aria-label={`Eliminar ${item.concept}`}
                         className="text-destructive hover:text-destructive transition-transform duration-150 hover:scale-110"
                       >
                         <Trash2 className="h-4 w-4" />
