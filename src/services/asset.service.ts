@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
+import { fetchAllPages } from '@/lib/api/fetch-all';
 import type { Asset } from '@/types';
 import type { PaginatedResponse } from '@/lib/api/types';
 
@@ -86,6 +87,23 @@ export const assetService = {
    */
   async remove(id: string): Promise<void> {
     return apiClient.delete<void>(API_ENDPOINTS.assets.remove(id));
+  },
+
+  /**
+   * Carga completa sin techo funcional (recorre páginas de 500).
+   * Solo para exportación (reportes): la vista usa la carga acotada.
+   */
+  async findAllComplete(
+    declarationId: string,
+    onProgress?: (loaded: number, total: number) => void,
+  ): Promise<Asset[]> {
+    return fetchAllPages(
+      async (limit, offset) => {
+        const res = await assetService.findAllWithPagination({ limit, offset }, declarationId);
+        return { items: res.assets, total: res.total };
+      },
+      { onProgress },
+    );
   },
 };
 

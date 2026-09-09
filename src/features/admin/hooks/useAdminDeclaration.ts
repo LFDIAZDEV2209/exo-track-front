@@ -40,6 +40,13 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [unclassifiedItems, setUnclassifiedItems] = useState<any[]>([]);
   const [conceptTypes, setConceptTypes] = useState<ConceptType[]>([]);
+  // Totales del servidor: si alguna colección supera FULL_LIST_LIMIT,
+  // el reporte trae el resto bajo demanda (la vista sigue siendo rápida)
+  const [assetsTotal, setAssetsTotal] = useState(0);
+  const [incomesTotal, setIncomesTotal] = useState(0);
+  const [liabilitiesTotal, setLiabilitiesTotal] = useState(0);
+  const [customItemsTotal, setCustomItemsTotal] = useState(0);
+  const [unclassifiedTotal, setUnclassifiedTotal] = useState(0);
 
   const [observations, setObservations] = useState('');
   const [deleteDeclarationDialogOpen, setDeleteDeclarationDialogOpen] = useState(false);
@@ -84,10 +91,15 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
       unclassifiedItemService.findAllWithPagination({ limit: FULL_LIST_LIMIT, offset: 0 }, declarationId),
     ]);
     setAssets(assetsRes.assets);
+    setAssetsTotal(assetsRes.total);
     setIncomes(incomesRes.incomes);
+    setIncomesTotal(incomesRes.total);
     setLiabilities(liabilitiesRes.liabilities);
+    setLiabilitiesTotal(liabilitiesRes.total);
     setCustomItems(customRes.items);
+    setCustomItemsTotal(customRes.total);
     setUnclassifiedItems(unclassifiedRes.items);
+    setUnclassifiedTotal(unclassifiedRes.total);
   }, [declarationId]);
 
   const loadTypes = useCallback(async () => {
@@ -350,6 +362,11 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     customItems,
     unclassifiedItems,
     conceptTypes,
+    assetsTotal,
+    incomesTotal,
+    liabilitiesTotal,
+    customItemsTotal,
+    unclassifiedTotal,
     totalAssets,
     totalIncomes,
     totalLiabilities,

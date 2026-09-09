@@ -11,24 +11,29 @@ import {
 import { FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 
 interface DeclarationReportButtonsProps {
-  /** null mientras cargan los datos (deshabilita los botones) */
-  report: DeclarationReportData | null;
+  /** Resuelve los datos COMPLETOS (trae del servidor lo que falte). */
+  getReport: () => Promise<DeclarationReportData>;
+  /** false mientras cargan los datos de la vista */
+  ready: boolean;
 }
 
 /**
  * Descarga del reporte completo de la declaración (Excel + PDF).
  * Comparte implementación entre la vista admin y la vista user.
+ * Al descargar, completa desde el servidor cualquier colección que la
+ * vista haya cargado acotada: el reporte nunca sale recortado.
  */
-export function DeclarationReportButtons({ report }: DeclarationReportButtonsProps) {
+export function DeclarationReportButtons({ getReport, ready }: DeclarationReportButtonsProps) {
   const { toast } = useToast();
   const [busy, setBusy] = useState<'excel' | 'pdf' | null>(null);
 
   const handleDownload = async (format: 'excel' | 'pdf') => {
-    if (!report || busy) return;
+    if (!ready || busy) return;
     try {
       setBusy(format);
       // Cede el hilo para que el spinner pinte antes del trabajo pesado
       await new Promise((resolve) => setTimeout(resolve, 30));
+      const report = await getReport();
       if (format === 'excel') {
         await downloadDeclarationExcel(report);
       } else {
@@ -36,7 +41,7 @@ export function DeclarationReportButtons({ report }: DeclarationReportButtonsPro
       }
       toast({
         title: 'Reporte descargado',
-        description: `El archivo ${format === 'excel' ? 'Excel' : 'PDF'} se generó correctamente.`,
+        description: `El archivo ${format === 'excel' ? 'Excel' : 'PDF'} se generó con ${report.totalRecords} registros.`,
       });
     } catch (error: any) {
       toast({
@@ -55,7 +60,7 @@ export function DeclarationReportButtons({ report }: DeclarationReportButtonsPro
         variant="outline"
         size="sm"
         onClick={() => handleDownload('excel')}
-        disabled={!report || busy !== null}
+        disabled={!ready || busy !== null}
         aria-label="Descargar reporte en Excel"
         title="Descargar reporte en Excel"
       >
@@ -70,7 +75,7 @@ export function DeclarationReportButtons({ report }: DeclarationReportButtonsPro
         variant="outline"
         size="sm"
         onClick={() => handleDownload('pdf')}
-        disabled={!report || busy !== null}
+        disabled={!ready || busy !== null}
         aria-label="Descargar reporte en PDF"
         title="Descargar reporte en PDF"
       >

@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/config';
+import { fetchAllPages } from '@/lib/api/fetch-all';
 import type { CustomItem } from '@/types';
 import type { PaginatedResponse } from '@/lib/api/types';
 
@@ -52,6 +53,23 @@ export const customItemService = {
       limit: response?.limit || 10,
       offset: response?.offset || 0,
     };
+  },
+
+  /**
+   * Carga completa sin techo funcional (recorre páginas de 500).
+   * Solo para exportación (reportes): la vista usa la carga acotada.
+   */
+  async findAllComplete(
+    declarationId: string,
+    onProgress?: (loaded: number, total: number) => void,
+  ): Promise<CustomItem[]> {
+    return fetchAllPages(
+      async (limit, offset) => {
+        const res = await customItemService.findAllWithPagination({ limit, offset }, declarationId);
+        return { items: res.items, total: res.total };
+      },
+      { onProgress },
+    );
   },
 
   /**

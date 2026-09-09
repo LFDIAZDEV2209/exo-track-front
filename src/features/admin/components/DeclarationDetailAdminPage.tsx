@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 import { Loader2, ArrowLeft, Trash2, Building2, TrendingUp, CreditCard, TriangleAlert, FileText, Shapes, Settings2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { assetService, incomeService, liabilityService, customItemService, unclassifiedItemService } from '@/services';
@@ -41,30 +41,44 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
   const router = useRouter();
   const ctx = useAdminDeclaration(declarationId, customerId);
 
-  // Reporte completo con los datos ya cargados (sin requests extra).
+  // Reporte completo: usa lo ya cargado y trae del servidor solo lo que falte.
   // Antes de los early returns: los hooks no pueden ser condicionales.
-  const report = useMemo(
-    () =>
-      ctx.loading || !ctx.declaration
-        ? null
-        : buildDeclarationReport({
-            clientName: ctx.client?.fullName ?? '',
-            documentNumber: ctx.client?.documentNumber ?? '',
-            email: ctx.client?.email,
-            phone: ctx.client?.phoneNumber,
-            taxableYear: ctx.declaration.taxableYear,
-            status:
-              ctx.declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente',
-            description: ctx.observations || ctx.declaration.description,
-            assets: ctx.assets,
-            incomes: ctx.incomes,
-            liabilities: ctx.liabilities,
-            customItems: ctx.customItems,
-            customTypeNames: Object.fromEntries(ctx.conceptTypes.map((t) => [t.id, t.name])),
-            unclassifiedItems: ctx.unclassifiedItems,
-          }),
-    [ctx],
-  );
+  const getReport = useCallback(async () => {
+    const [assets, incomes, liabilities, customItems, unclassifiedItems] = await Promise.all([
+      ctx.assets.length >= ctx.assetsTotal
+        ? ctx.assets
+        : assetService.findAllComplete(declarationId),
+      ctx.incomes.length >= ctx.incomesTotal
+        ? ctx.incomes
+        : incomeService.findAllComplete(declarationId),
+      ctx.liabilities.length >= ctx.liabilitiesTotal
+        ? ctx.liabilities
+        : liabilityService.findAllComplete(declarationId),
+      ctx.customItems.length >= ctx.customItemsTotal
+        ? ctx.customItems
+        : customItemService.findAllComplete(declarationId),
+      ctx.unclassifiedItems.length >= ctx.unclassifiedTotal
+        ? ctx.unclassifiedItems
+        : unclassifiedItemService.findAllComplete(declarationId),
+    ]);
+    return buildDeclarationReport({
+      clientName: ctx.client?.fullName ?? '',
+      documentNumber: ctx.client?.documentNumber ?? '',
+      email: ctx.client?.email,
+      phone: ctx.client?.phoneNumber,
+      taxableYear: ctx.declaration.taxableYear,
+      status: ctx.declaration.status === DeclarationStatus.COMPLETED ? 'Finalizada' : 'Pendiente',
+      description: ctx.observations || ctx.declaration.description,
+      assets,
+      incomes,
+      liabilities,
+      customItems,
+      customTypeNames: Object.fromEntries(ctx.conceptTypes.map((t) => [t.id, t.name])),
+      unclassifiedItems,
+    });
+  }, [ctx, declarationId]);
+
+  const reportReady = !ctx.loading && !!ctx.declaration;
 
   if (ctx.loading) {
     return (
@@ -112,7 +126,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <DeclarationReportButtons report={report} />
+          <DeclarationReportButtons getReport={getReport} ready={reportReady} />
           <Badge
             variant={ctx.declaration.status === DeclarationStatus.COMPLETED ? 'default' : 'secondary'}
             className={

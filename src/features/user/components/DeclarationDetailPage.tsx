@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, Loader2, Building2, TrendingUp, CreditCard, MessageSquare, Shapes } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardTitle } from '@/shared/ui/card';
@@ -35,6 +35,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [unclassifiedItems, setUnclassifiedItems] = useState<any[]>([]);
   const [conceptTypes, setConceptTypes] = useState<ConceptType[]>([]);
+  const [totals, setTotals] = useState({ assets: 0, incomes: 0, liabilities: 0, custom: 0, unclassified: 0 });
   const loggedUser = useAuthStore((s) => s.user);
 
   const loadData = useCallback(async () => {
@@ -55,6 +56,13 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
     setCustomItems(customRes.items);
     setUnclassifiedItems(unclassifiedRes.items);
     setConceptTypes(types);
+    setTotals({
+      assets: assetsRes.total,
+      incomes: incomesRes.total,
+      liabilities: liabilitiesRes.total,
+      custom: customRes.total,
+      unclassified: unclassifiedRes.total,
+    });
   }, [declarationId]);
 
   useEffect(() => {
@@ -84,27 +92,35 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
   const customItemsByType = (conceptTypeId: string) =>
     customItems.filter((item) => item.conceptType?.id === conceptTypeId);
 
-  const report = useMemo(
-    () =>
-      loading || !declaration
-        ? null
-        : buildDeclarationReport({
-            clientName: loggedUser?.fullName ?? '',
-            documentNumber: loggedUser?.documentNumber ?? '',
-            email: loggedUser?.email,
-            phone: loggedUser?.phoneNumber,
-            taxableYear: declaration.taxableYear,
-            status: declaration.status === 'COMPLETED' ? 'Finalizada' : 'Pendiente',
-            description: declaration.description,
-            assets,
-            incomes,
-            liabilities,
-            customItems,
-            customTypeNames: Object.fromEntries(conceptTypes.map((t) => [t.id, t.name])),
-            unclassifiedItems,
-          }),
-    [loading, declaration, loggedUser, assets, incomes, liabilities, customItems, unclassifiedItems, conceptTypes],
-  );
+  // Reporte completo: usa lo ya cargado y trae del servidor solo lo que falte
+  const getReport = useCallback(async () => {
+    const [allAssets, allIncomes, allLiabilities, allCustom, allUnclassified] = await Promise.all([
+      assets.length >= totals.assets ? assets : assetService.findAllComplete(declarationId),
+      incomes.length >= totals.incomes ? incomes : incomeService.findAllComplete(declarationId),
+      liabilities.length >= totals.liabilities ? liabilities : liabilityService.findAllComplete(declarationId),
+      customItems.length >= totals.custom ? customItems : customItemService.findAllComplete(declarationId),
+      unclassifiedItems.length >= totals.unclassified
+        ? unclassifiedItems
+        : unclassifiedItemService.findAllComplete(declarationId),
+    ]);
+    return buildDeclarationReport({
+      clientName: loggedUser?.fullName ?? '',
+      documentNumber: loggedUser?.documentNumber ?? '',
+      email: loggedUser?.email,
+      phone: loggedUser?.phoneNumber,
+      taxableYear: declaration.taxableYear,
+      status: declaration.status === 'COMPLETED' ? 'Finalizada' : 'Pendiente',
+      description: declaration.description,
+      assets: allAssets,
+      incomes: allIncomes,
+      liabilities: allLiabilities,
+      customItems: allCustom,
+      customTypeNames: Object.fromEntries(conceptTypes.map((t) => [t.id, t.name])),
+      unclassifiedItems: allUnclassified,
+    });
+  }, [assets, incomes, liabilities, customItems, unclassifiedItems, conceptTypes, totals, loggedUser, declaration, declarationId]);
+
+  const reportReady = !loading && !!declaration;
 
   if (loading) {
     return (
@@ -133,7 +149,7 @@ export function DeclarationDetailPage({ declarationId }: DeclarationDetailPagePr
           <h1 className="text-3xl font-bold tracking-tight">Declaración {declaration.taxableYear}</h1>
           <p className="text-muted-foreground">Revisa los datos de tu declaración de renta</p>
         </div>
-        <DeclarationReportButtons report={report} />
+        <DeclarationReportButtons getReport={getReport} ready={reportReady} />
       </div>
 
       <Tabs defaultValue="assets" className="space-y-4">
