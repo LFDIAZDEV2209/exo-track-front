@@ -110,14 +110,14 @@ export function MoveItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md overflow-x-clip">
         <DialogHeader>
           <div className="bg-emerald-600 -mx-6 -mt-6 px-6 py-4 border-b rounded-t-lg">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20">
                 <ArrowRightLeft className="h-5 w-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <DialogTitle className="font-bold text-white">
                   {item.kind === 'unclassified' ? 'Catalogar concepto' : 'Mover registro'}
                 </DialogTitle>
@@ -129,15 +129,15 @@ export function MoveItemDialog({
           </div>
         </DialogHeader>
 
-        <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-          <p className="truncate text-sm font-bold">{item.concept}</p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{formatCurrency(typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount)}</span>
-            <Badge variant="secondary" className="text-[11px]">{currentLabel}</Badge>
+        <div className="min-w-0 rounded-lg border bg-muted/40 px-3 py-2.5">
+          <p className="text-sm font-bold break-words line-clamp-2">{item.concept}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="shrink-0">{formatCurrency(typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount)}</span>
+            <Badge variant="secondary" className="shrink-0 text-[11px]">{currentLabel}</Badge>
           </div>
         </div>
 
-        <div className="grid gap-2" role="radiogroup" aria-label="Tipo destino">
+        <div className="grid min-w-0 gap-2" role="radiogroup" aria-label="Tipo destino">
           {options.map((option) => {
             const Icon = option.icon;
             const disabled = isCurrent(option.to, option.customTypeId);
@@ -151,19 +151,19 @@ export function MoveItemDialog({
                 aria-checked={selected}
                 disabled={disabled || isSaving}
                 onClick={() => setDestination({ to: option.to, customTypeId: option.customTypeId })}
-                className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`flex min-w-0 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 ${
                   selected
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700'
                     : 'hover:border-emerald-500/50 hover:bg-muted/50'
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                <span className="flex-1">{option.label}</span>
+                <span className="min-w-0 flex-1 break-words">{option.label}</span>
                 {option.to === 'custom' && (
-                  <Badge variant="outline" className="text-[10px]">Personalizado</Badge>
+                  <Badge variant="outline" className="shrink-0 text-[10px]">Personalizado</Badge>
                 )}
-                {disabled && <span className="text-[11px] text-muted-foreground">Actual</span>}
-                {selected && <Check className="h-4 w-4" aria-hidden />}
+                {disabled && <span className="shrink-0 text-[11px] text-muted-foreground">Actual</span>}
+                {selected && <Check className="h-4 w-4 shrink-0" aria-hidden />}
               </button>
             );
           })}

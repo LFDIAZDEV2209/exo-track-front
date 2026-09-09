@@ -128,14 +128,14 @@ export function ConceptTypesManagerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto overflow-x-clip">
         <DialogHeader>
           <div className="bg-emerald-600 -mx-6 -mt-6 px-6 py-4 border-b rounded-t-lg">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20">
                 <Shapes className="h-5 w-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <DialogTitle className="font-bold text-white">Tipos de concepto</DialogTitle>
                 <DialogDescription className="text-emerald-100">
                   Cree y gestione pestañas personalizadas (Vehículos, Inversiones…).
@@ -221,18 +221,18 @@ export function ConceptTypesManagerDialog({
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="flex-1 truncate text-sm font-bold">{type.name}</span>
-                      <Badge variant={type.isActive ? 'default' : 'secondary'} className={type.isActive ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : ''}>
+                      <span className="min-w-0 flex-1 truncate text-sm font-bold">{type.name}</span>
+                      <Badge variant={type.isActive ? 'default' : 'secondary'} className={`shrink-0 ${type.isActive ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : ''}`}>
                         {type.isActive ? 'Activo' : 'Inactivo'}
                       </Badge>
                       {count > 0 && (
-                        <Badge variant="outline" className="text-[11px]">
+                        <Badge variant="outline" className="shrink-0 text-[11px]">
                           {count} registro{count !== 1 ? 's' : ''}
                         </Badge>
                       )}
                     </div>
                     {type.description && (
-                      <p className="text-xs text-muted-foreground">{type.description}</p>
+                      <p className="text-xs text-muted-foreground break-words">{type.description}</p>
                     )}
                     {isConfirmingDelete ? (
                       <div className="flex items-center justify-between gap-2 rounded-md bg-destructive/10 px-2.5 py-2">

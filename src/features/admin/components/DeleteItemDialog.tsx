@@ -94,7 +94,7 @@ export function DeleteItemDialog({
             </div>
             <div>
               <AlertDialogTitle className="font-bold">¿Estás seguro?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogDescription className="break-words">
                 Esta acción no se puede deshacer. Esto eliminará permanentemente el {getItemTypeLabel()}{' '}
                 <strong>{itemConcept}</strong>.
               </AlertDialogDescription>
