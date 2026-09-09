@@ -4,9 +4,22 @@ import type { User } from '@/types';
 import type { PaginatedResponse } from '@/lib/api/types';
 import { UserRole } from '@/types/user-role.type';
 
+export type UserSortField =
+  | 'fullName'
+  | 'documentNumber'
+  | 'email'
+  | 'createdAt'
+  | 'totalDeclarations';
+
+export type SortOrder = 'ASC' | 'DESC';
+
 export interface PaginationDto {
   limit?: number;
   offset?: number;
+  search?: string;
+  sortBy?: UserSortField;
+  order?: SortOrder;
+  isActive?: boolean;
 }
 
 export interface UsersStats {
@@ -38,21 +51,10 @@ export const userService = {
    * @returns Objeto con usuarios e información de paginación
    */
   async findAllWithPagination(paginationDto?: PaginationDto): Promise<FindAllUsersResponse> {
-    // Debug: Ver qué endpoint se está llamando
     const endpoint = API_ENDPOINTS.users.findAll(paginationDto);
-    console.log('[UserService] Calling endpoint:', endpoint);
-    console.log('[UserService] Pagination params:', paginationDto);
-    
+
     const response = await apiClient.get<PaginatedResponse<User>>(endpoint);
-    
-    // Debug: Ver qué respuesta se recibió del backend
-    console.log('[UserService] Backend response:', {
-      dataCount: response?.data?.length || 0,
-      total: response?.total,
-      limit: response?.limit,
-      offset: response?.offset,
-    });
-    
+
     return {
       users: response?.data || [],
       total: response?.total || 0,

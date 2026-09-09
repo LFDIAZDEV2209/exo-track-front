@@ -14,7 +14,14 @@ export const API_ENDPOINTS = {
   },
   // Users
   users: {
-    findAll: (params?: { limit?: number; offset?: number }) => {
+    findAll: (params?: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+      sortBy?: string;
+      order?: 'ASC' | 'DESC';
+      isActive?: boolean;
+    }) => {
       const queryParams = new URLSearchParams();
       if (params?.limit !== undefined) {
         queryParams.append('limit', params.limit.toString());
@@ -22,12 +29,21 @@ export const API_ENDPOINTS = {
       if (params?.offset !== undefined) {
         queryParams.append('offset', params.offset.toString());
       }
+      if (params?.search !== undefined && params.search.trim() !== '') {
+        queryParams.append('search', params.search.trim());
+      }
+      if (params?.sortBy !== undefined) {
+        queryParams.append('sortBy', params.sortBy);
+      }
+      if (params?.order !== undefined) {
+        queryParams.append('order', params.order);
+      }
+      if (params?.isActive !== undefined) {
+        queryParams.append('isActive', String(params.isActive));
+      }
       const query = queryParams.toString();
       const endpoint = `/users${query ? `?${query}` : ''}`;
-      
-      // Debug: Ver qué URL se está generando
-      console.log('[API Config] Generated endpoint:', endpoint);
-      
+
       return endpoint;
     },
     findOne: (term: string) => `/users/${term}`,

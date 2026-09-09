@@ -1,10 +1,20 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Eye, Pencil, Trash2 } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import Link from 'next/link';
+import type { SortOrder, UserSortField } from '@/services';
 
 const formatDate = (date: string | Date) => {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -23,8 +33,53 @@ interface CustomersTableProps {
   currentPage: number;
   totalPages: number;
   totalUsers: number;
+  sortBy: UserSortField;
+  order: SortOrder;
+  onSortChange: (field: UserSortField) => void;
   onPageChange: (page: number) => void;
   onDeleteClick: (userId: string, userName: string) => void;
+}
+
+function SortableHeader({
+  label,
+  field,
+  sortBy,
+  order,
+  onSortChange,
+  className = '',
+  align = 'left',
+}: {
+  label: string;
+  field: UserSortField;
+  sortBy: UserSortField;
+  order: SortOrder;
+  onSortChange: (field: UserSortField) => void;
+  className?: string;
+  align?: 'left' | 'center' | 'right';
+}) {
+  const isActive = sortBy === field;
+  const Icon = isActive ? (order === 'ASC' ? ArrowUp : ArrowDown) : ArrowUpDown;
+  const alignClass =
+    align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
+
+  return (
+    <TableHead
+      aria-sort={isActive ? (order === 'ASC' ? 'ascending' : 'descending') : 'none'}
+      className={`text-xs font-bold uppercase tracking-wider text-muted-foreground ${className}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSortChange(field)}
+        aria-label={`Ordenar por ${label} ${isActive && order === 'ASC' ? 'descendente' : 'ascendente'}`}
+        className={`inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-emerald-500 ${alignClass} ${
+          isActive ? 'text-emerald-600' : ''
+        }`}
+      >
+        {label}
+        <Icon className={`h-3.5 w-3.5 ${isActive ? '' : 'opacity-40'}`} />
+      </button>
+    </TableHead>
+  );
 }
 
 export function CustomersTable({
@@ -34,6 +89,9 @@ export function CustomersTable({
   currentPage,
   totalPages,
   totalUsers,
+  sortBy,
+  order,
+  onSortChange,
   onPageChange,
   onDeleteClick,
 }: CustomersTableProps) {
@@ -47,21 +105,45 @@ export function CustomersTable({
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border/50">
-              <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Nombre
-              </TableHead>
-              <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">
-                Cédula
-              </TableHead>
-              <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground hidden md:table-cell">
-                Email
-              </TableHead>
-              <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">
-                Decl.
-              </TableHead>
-              <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground hidden lg:table-cell">
-                Registro
-              </TableHead>
+              <SortableHeader
+                label="Nombre"
+                field="fullName"
+                sortBy={sortBy}
+                order={order}
+                onSortChange={onSortChange}
+              />
+              <SortableHeader
+                label="Cédula"
+                field="documentNumber"
+                sortBy={sortBy}
+                order={order}
+                onSortChange={onSortChange}
+                className="hidden sm:table-cell"
+              />
+              <SortableHeader
+                label="Email"
+                field="email"
+                sortBy={sortBy}
+                order={order}
+                onSortChange={onSortChange}
+                className="hidden md:table-cell"
+              />
+              <SortableHeader
+                label="Decl."
+                field="totalDeclarations"
+                sortBy={sortBy}
+                order={order}
+                onSortChange={onSortChange}
+                align="center"
+              />
+              <SortableHeader
+                label="Registro"
+                field="createdAt"
+                sortBy={sortBy}
+                order={order}
+                onSortChange={onSortChange}
+                className="hidden lg:table-cell"
+              />
               <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">
                 Acciones
               </TableHead>
@@ -109,6 +191,7 @@ export function CustomersTable({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Ver ${user.fullName}`}
                         className="h-8 w-8 hover:bg-emerald-500/10 hover:text-emerald-600"
                       >
                         <Eye className="h-4 w-4" />
@@ -118,6 +201,7 @@ export function CustomersTable({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Editar ${user.fullName}`}
                         className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-600"
                       >
                         <Pencil className="h-4 w-4" />
@@ -126,6 +210,7 @@ export function CustomersTable({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label={`Eliminar ${user.fullName}`}
                       className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => onDeleteClick(user.id, user.fullName)}
                     >
@@ -139,10 +224,11 @@ export function CustomersTable({
         </Table>
       </div>
 
-      {!searchQuery.trim() && totalPages > 1 && (
+      {totalPages > 1 && (
         <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-4">
           <span className="text-xs text-muted-foreground">
             Página {currentPage} de {totalPages}
+            {searchQuery.trim() ? ` · ${totalUsers} resultado${totalUsers !== 1 ? 's' : ''}` : ''}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -150,6 +236,7 @@ export function CustomersTable({
               size="sm"
               onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1 || loading}
+              aria-label="Página anterior"
               className="h-8"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -175,6 +262,8 @@ export function CustomersTable({
                     size="sm"
                     onClick={() => onPageChange(page)}
                     disabled={loading}
+                    aria-label={`Página ${page}`}
+                    aria-current={currentPage === page ? 'page' : undefined}
                     className={`h-8 min-w-8 ${
                       currentPage === page
                         ? 'bg-emerald-500 hover:bg-emerald-600'
@@ -191,6 +280,7 @@ export function CustomersTable({
               size="sm"
               onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages || loading}
+              aria-label="Página siguiente"
               className="h-8"
             >
               <ChevronRight className="h-4 w-4" />

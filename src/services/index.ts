@@ -1,6 +1,7 @@
 // Central export for all services
 export { authService } from './auth.service';
 export { userService } from './user.service';
+export type { UserSortField, SortOrder } from './user.service';
 export { declarationService } from './declaration.service';
 export { incomeService } from './income.service';
 export { assetService } from './asset.service';
