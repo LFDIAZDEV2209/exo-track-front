@@ -6,6 +6,7 @@ import { Badge } from '@/shared/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import { formatCurrency } from '@/lib/utils';
 import { DataSource } from '@/types';
+import { SourceDetailView } from './source-detail-view';
 
 interface DataTableItem {
   id: string;
@@ -74,13 +75,9 @@ export function DataTable({ data, onEdit, onDelete, readOnly = false }: DataTabl
             >
               <TableCell className="font-medium">
                 <Circle className="h-2 w-2 mr-2 inline-block fill-emerald-500 text-emerald-500" />
-                <span className="flex flex-col">
+                <span className="flex min-w-0 flex-col gap-1">
                   <span>{item.concept}</span>
-                  {item.sourceDetail && (
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {item.sourceDetail}
-                    </span>
-                  )}
+                  {item.sourceDetail && <SourceDetailView value={item.sourceDetail} />}
                 </span>
               </TableCell>
               <TableCell>{formatCurrency(amount)}</TableCell>

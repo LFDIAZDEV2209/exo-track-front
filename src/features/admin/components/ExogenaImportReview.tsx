@@ -18,6 +18,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { formatCurrency } from '@/lib/utils';
+import { SourceDetailView } from '@/shared/components/source-detail-view';
 import type { ExogenaCategory, ExogenaItem } from '@/lib/exogena-parser';
 
 const CATEGORY_OPTIONS: { value: ExogenaCategory; label: string }[] = [
@@ -224,9 +225,7 @@ export function ExogenaImportReview({
                         aria-label="Concepto"
                       />
                       {item.sourceDetail && (
-                        <p className="text-xs text-muted-foreground truncate" title={item.sourceDetail}>
-                          {item.sourceDetail}
-                        </p>
+                        <SourceDetailView value={item.sourceDetail} compact />
                       )}
                     </div>
                     <Input
