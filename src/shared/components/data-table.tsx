@@ -14,6 +14,7 @@ interface DataTableItem {
   amount: number | string;
   source: DataSource | string;
   sourceDetail?: string;
+  subtype?: { id: string; name: string } | null;
 }
 
 interface DataTableProps {
@@ -79,7 +80,14 @@ export function DataTable({ data, onEdit, onDelete, onMove, moveLabel = 'Mover a
               <TableCell className="font-medium">
                 <Circle className="h-2 w-2 mr-2 inline-block fill-emerald-500 text-emerald-500" />
                 <span className="flex min-w-0 flex-col gap-1">
-                  <span>{item.concept}</span>
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <span>{item.concept}</span>
+                    {item.subtype && (
+                      <Badge variant="outline" className="shrink-0 border-violet-500/30 bg-violet-500/10 text-[11px] font-semibold text-violet-700 dark:text-violet-400">
+                        {item.subtype.name}
+                      </Badge>
+                    )}
+                  </span>
                   {item.sourceDetail && <SourceDetailView value={item.sourceDetail} />}
                 </span>
               </TableCell>

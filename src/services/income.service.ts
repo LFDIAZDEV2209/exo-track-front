@@ -13,6 +13,7 @@ export interface CreateIncomeRequest {
   declarationId: string;
   concept: string;
   amount: number;
+  subtypeId?: string;
 }
 
 export interface FindAllIncomesResponse {
@@ -89,11 +90,12 @@ export const incomeService = {
    * @param data - Datos a actualizar (solo concept y amount, sin declarationId ni source)
    * @returns Ingreso actualizado
    */
-  async update(id: string, data: { concept?: string; amount?: number }): Promise<Income> {
+  async update(id: string, data: { concept?: string; amount?: number; subtypeId?: string | null }): Promise<Income> {
     // Filtrar solo los campos permitidos para actualizar
-    const payload: { concept?: string; amount?: number } = {};
+    const payload: { concept?: string; amount?: number; subtypeId?: string | null } = {};
     if (data.concept !== undefined) payload.concept = data.concept;
     if (data.amount !== undefined) payload.amount = data.amount;
+    if (data.subtypeId !== undefined) payload.subtypeId = data.subtypeId;
     
     return apiClient.put<Income>(API_ENDPOINTS.income.update(id), payload);
   },

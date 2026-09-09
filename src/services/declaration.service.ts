@@ -42,12 +42,14 @@ export interface MoveItemRequest {
   from: MoveItemFromKind;
   to: MoveItemToKind;
   customTypeId?: string;
+  subtypeId?: string;
 }
 
 export interface MoveItemResponse {
   item: any;
   from: MoveItemFromKind;
   to: MoveItemToKind;
+  subtypeCleared?: boolean;
 }
 
 export interface UpdateDeclarationRequest {

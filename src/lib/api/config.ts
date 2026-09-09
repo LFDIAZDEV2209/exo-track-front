@@ -119,6 +119,20 @@ export const API_ENDPOINTS = {
     update: (id: string) => `/concept-types/${id}`,
     remove: (id: string) => `/concept-types/${id}`,
   },
+  // Concept subtypes (self-manageable catalog per scope: income, asset, ...)
+  conceptSubtypes: {
+    findAll: (params?: { scope?: string; conceptTypeId?: string; isActive?: boolean }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.scope) queryParams.append('scope', params.scope);
+      if (params?.conceptTypeId) queryParams.append('conceptTypeId', params.conceptTypeId);
+      if (params?.isActive !== undefined) queryParams.append('isActive', String(params.isActive));
+      const query = queryParams.toString();
+      return `/concept-subtypes${query ? `?${query}` : ''}`;
+    },
+    create: '/concept-subtypes',
+    update: (id: string) => `/concept-subtypes/${id}`,
+    remove: (id: string) => `/concept-subtypes/${id}`,
+  },
   // Custom items (items under a custom concept type)
   customItems: {
     findAll: (params?: { limit?: number; offset?: number; declarationId?: string; conceptTypeId?: string }) => {

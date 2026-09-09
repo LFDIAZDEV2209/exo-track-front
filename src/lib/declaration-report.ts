@@ -11,6 +11,8 @@ export interface ReportItem {
   amount: number;
   /** 'Exógeno' | 'Manual' */
   source: string;
+  /** Subtipo (ej. Dividendos). Ausente = sin subtipo. */
+  subtype?: string;
   /** Detalle completo del subconcepto (reportante, NIT, cuenta…) */
   detail?: string;
   reporterName?: string | null;
@@ -73,6 +75,7 @@ const toReportItem = (raw: any): ReportItem => ({
   concept: String(raw.concept ?? ''),
   amount: toNumber(raw.amount),
   source: sourceLabel(raw.source),
+  subtype: raw.subtype?.name ? String(raw.subtype.name) : undefined,
   detail: raw.sourceDetail ? String(raw.sourceDetail) : undefined,
   reporterName: raw.reporterName ?? null,
   reporterNit: raw.reporterNit ?? null,
@@ -257,13 +260,13 @@ export async function buildDeclarationExcel(data: DeclarationReportData): Promis
     const sheet = wb.addWorksheet((section.title || section.key).slice(0, 28), {
       views: [{ state: 'frozen', ySplit: 2 }],
     });
-    sheet.columns = [{ width: 55 }, { width: 12 }, { width: 70 }, { width: 18 }];
-    sheet.mergeCells('A1:D1');
+    sheet.columns = [{ width: 55 }, { width: 18 }, { width: 12 }, { width: 70 }, { width: 18 }];
+    sheet.mergeCells('A1:E1');
     sheet.getCell('A1').value =
       `${section.title} — Declaración ${data.taxableYear} (${data.clientName})`;
     sheet.getCell('A1').font = { bold: true, size: 13, color: { argb: XC.brand } };
 
-    const headers = ['Concepto', 'Fuente', 'Detalle', 'Valor'];
+    const headers = ['Concepto', 'Subtipo', 'Fuente', 'Detalle', 'Valor'];
     const headerCells = sheet.getRow(2);
     headers.forEach((h, i) => {
       headerCells.getCell(i + 1).value = h;
@@ -278,20 +281,22 @@ export async function buildDeclarationExcel(data: DeclarationReportData): Promis
     for (const item of section.items) {
       const excelRow = sheet.getRow(r);
       excelRow.getCell(1).value = item.concept;
-      excelRow.getCell(2).value = item.source;
-      excelRow.getCell(3).value = item.detail ?? '';
-      excelRow.getCell(4).value = item.amount;
+      excelRow.getCell(2).value = item.subtype ?? '';
+      excelRow.getCell(3).value = item.source;
+      excelRow.getCell(4).value = item.detail ?? '';
+      excelRow.getCell(5).value = item.amount;
       styleCell(excelRow.getCell(1));
       styleCell(excelRow.getCell(2));
       styleCell(excelRow.getCell(3));
-      styleCell(excelRow.getCell(4), true);
+      styleCell(excelRow.getCell(4));
+      styleCell(excelRow.getCell(5), true);
       r += 1;
     }
     const totalCells = sheet.getRow(r);
     totalCells.getCell(1).value = 'TOTAL';
-    totalCells.getCell(4).value = section.total;
-    for (let c = 1; c <= 4; c++) styleTotal(totalCells.getCell(c));
-    sheet.autoFilter = 'A2:D2';
+    totalCells.getCell(5).value = section.total;
+    for (let c = 1; c <= 5; c++) styleTotal(totalCells.getCell(c));
+    sheet.autoFilter = 'A2:E2';
   }
 
   const buffer = await wb.xlsx.writeBuffer();
@@ -464,23 +469,25 @@ export async function downloadDeclarationPdf(data: DeclarationReportData): Promi
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
-      head: [['Concepto', 'Fuente', 'Detalle', 'Valor']],
+      head: [['Concepto', 'Subtipo', 'Fuente', 'Detalle', 'Valor']],
       body: section.items.map((item) => [
         item.concept,
+        item.subtype ?? '—',
         item.source,
         item.detail ?? '—',
         formatCOP(item.amount),
       ]),
-      foot: [[{ content: 'TOTAL', colSpan: 3, styles: { halign: 'right' } }, formatCOP(section.total)]],
+      foot: [[{ content: 'TOTAL', colSpan: 4, styles: { halign: 'right' } }, formatCOP(section.total)]],
       theme: 'striped',
       styles: { fontSize: 8.5, overflow: 'linebreak' },
       headStyles: { fillColor: PDF.brand, textColor: PDF.white, fontStyle: 'bold' },
       footStyles: { fillColor: PDF.brandLight, textColor: PDF.dark, fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 52 },
-        1: { cellWidth: 20, halign: 'center' },
-        2: { cellWidth: 'auto' },
-        3: { cellWidth: 30, halign: 'right' },
+        0: { cellWidth: 46 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 'auto' },
+        4: { cellWidth: 30, halign: 'right' },
       },
       didDrawPage: footer,
     });

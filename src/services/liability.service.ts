@@ -13,6 +13,7 @@ export interface CreateLiabilityRequest {
   declarationId: string;
   concept: string;
   amount: number;
+  subtypeId?: string;
 }
 
 export interface FindAllLiabilitiesResponse {
@@ -89,11 +90,12 @@ export const liabilityService = {
    * @param data - Datos a actualizar (solo concept y amount, sin declarationId ni source)
    * @returns Deuda actualizada
    */
-  async update(id: string, data: { concept?: string; amount?: number }): Promise<Liability> {
+  async update(id: string, data: { concept?: string; amount?: number; subtypeId?: string | null }): Promise<Liability> {
     // Filtrar solo los campos permitidos para actualizar
-    const payload: { concept?: string; amount?: number } = {};
+    const payload: { concept?: string; amount?: number; subtypeId?: string | null } = {};
     if (data.concept !== undefined) payload.concept = data.concept;
     if (data.amount !== undefined) payload.amount = data.amount;
+    if (data.subtypeId !== undefined) payload.subtypeId = data.subtypeId;
     
     return apiClient.put<Liability>(API_ENDPOINTS.liabilities.update(id), payload);
   },

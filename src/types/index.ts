@@ -16,6 +16,8 @@ export type { Asset } from "./asset.type";
 
 export type { ConceptType } from "./concept-type.type";
 
+export type { ConceptSubtype, ItemScope } from "./concept-subtype.type";
+
 export type { CustomItem } from "./custom-item.type";
 
 export type { UnclassifiedItem } from "./unclassified-item.type";

@@ -23,6 +23,7 @@ import { ItemFormDialog } from './ItemFormDialog';
 import { DeleteItemDialog } from './DeleteItemDialog';
 import { MoveItemDialog } from './MoveItemDialog';
 import { ConceptTypesManagerDialog } from './ConceptTypesManagerDialog';
+import { SubtypesManagerDialog } from './SubtypesManagerDialog';
 import { FinancialDataTabPanel } from './FinancialDataTabPanel';
 import { ObservationsCard } from './ObservationsCard';
 import { DeclarationReportButtons } from '@/shared/components/declaration-report-buttons';
@@ -107,6 +108,12 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
   const customFormType = ctx.customFormTypeId
     ? ctx.conceptTypes.find((t) => t.id === ctx.customFormTypeId)
     : null;
+
+  const incomeSubtypes = ctx.subtypesByScope('income');
+  const activeIncomeSubtypes = incomeSubtypes.filter((s) => s.isActive);
+  const subtypeCounts = Object.fromEntries(
+    incomeSubtypes.map((s) => [s.id, ctx.subtypeCountById(s.id, ctx.incomes)]),
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -208,6 +215,8 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
             title="Ingresos"
             totalFormatted={formatCurrency(ctx.totalIncomes)}
             items={ctx.incomes}
+            subtypes={incomeSubtypes}
+            onManageSubtypes={() => ctx.setSubtypesManagerScope({ scope: 'income', label: 'ingresos' })}
             onEdit={ctx.handleEditIncome}
             onDelete={ctx.handleDeleteIncome}
             onMove={ctx.handleMoveIncome}
@@ -304,6 +313,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
       )}
 
       <ItemFormDialog
+        key={ctx.editingIncome ? `income-${ctx.editingIncome.id}` : 'income-new'}
         open={ctx.incomeFormOpen}
         onOpenChange={(open) => {
           ctx.setIncomeFormOpen(open);
@@ -311,11 +321,13 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         }}
         onSuccess={() => ctx.loadItems()}
         itemType="income"
+        subtypes={activeIncomeSubtypes}
         declarationId={declarationId}
         editingItem={ctx.editingIncome ? {
           id: ctx.editingIncome.id,
           concept: ctx.editingIncome.concept,
           amount: toAmount(ctx.editingIncome.amount),
+          subtypeId: ctx.editingIncome.subtype?.id ?? null,
         } : null}
         createService={incomeService.create}
         updateService={incomeService.update}
@@ -432,6 +444,7 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
         declarationId={declarationId}
         item={ctx.moveTarget}
         conceptTypes={ctx.conceptTypes}
+        subtypes={ctx.subtypes}
         onMoved={() => ctx.refreshAfterMove()}
       />
 
@@ -445,6 +458,23 @@ export function DeclarationDetailAdminPage({ declarationId, customerId }: Declar
           await Promise.all([ctx.loadTypes(), ctx.loadItems()]);
         }}
       />
+
+      {ctx.subtypesManagerScope && (
+        <SubtypesManagerDialog
+          key={`subtypes-${ctx.subtypesManagerScope.scope}`}
+          open={ctx.subtypesManagerScope !== null}
+          onOpenChange={(open) => {
+            if (!open) ctx.setSubtypesManagerScope(null);
+          }}
+          scope={ctx.subtypesManagerScope.scope}
+          scopeLabel={ctx.subtypesManagerScope.label}
+          types={incomeSubtypes}
+          itemsCountBySubtype={subtypeCounts}
+          onChanged={async () => {
+            await Promise.all([ctx.loadSubtypes(), ctx.loadItems()]);
+          }}
+        />
+      )}
 
       <AlertDialog open={ctx.deleteDeclarationDialogOpen} onOpenChange={ctx.setDeleteDeclarationDialogOpen}>
         <AlertDialogContent>

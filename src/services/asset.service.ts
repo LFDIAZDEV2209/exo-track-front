@@ -13,6 +13,7 @@ export interface CreateAssetRequest {
   declarationId: string;
   concept: string;
   amount: number;
+  subtypeId?: string;
 }
 
 export interface FindAllAssetsResponse {
@@ -72,11 +73,12 @@ export const assetService = {
    * @param data - Datos a actualizar (solo concept y amount, sin declarationId ni source)
    * @returns Activo actualizado
    */
-  async update(id: string, data: { concept?: string; amount?: number }): Promise<Asset> {
+  async update(id: string, data: { concept?: string; amount?: number; subtypeId?: string | null }): Promise<Asset> {
     // Filtrar solo los campos permitidos para actualizar
-    const payload: { concept?: string; amount?: number } = {};
+    const payload: { concept?: string; amount?: number; subtypeId?: string | null } = {};
     if (data.concept !== undefined) payload.concept = data.concept;
     if (data.amount !== undefined) payload.amount = data.amount;
+    if (data.subtypeId !== undefined) payload.subtypeId = data.subtypeId;
     
     return apiClient.put<Asset>(API_ENDPOINTS.assets.update(id), payload);
   },

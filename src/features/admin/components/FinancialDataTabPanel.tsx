@@ -14,13 +14,14 @@ import {
 import { DataTable } from '@/shared/components/data-table';
 import { PaginationControls } from '@/shared/components/pagination-controls';
 import { EmptyState } from '@/shared/layout/empty-state';
-import { Plus, Search, X } from 'lucide-react';
+import { Plus, Search, Tags, X } from 'lucide-react';
 import { DataSource } from '@/types';
 
 const ITEMS_PER_PAGE = 10;
 
 type SourceFilter = 'all' | 'exogena' | 'manual';
 type SortOption = 'recent' | 'concept-asc' | 'concept-desc' | 'amount-desc' | 'amount-asc';
+type SubtypeFilter = 'all' | 'none' | string;
 
 const normalizeSource = (source: DataSource | string): 'exogena' | 'manual' => {
   if (typeof source === 'string') {
@@ -54,6 +55,11 @@ interface FinancialDataTabPanelProps {
   headerClassName?: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  /** Subtipos disponibles para filtrar (si se pasa, aparece el filtro) */
+  subtypes?: Array<{ id: string; name: string }>;
+  /** Gestionar el catálogo de subtipos de esta pestaña */
+  onManageSubtypes?: () => void;
+  manageSubtypesLabel?: string;
 }
 
 export function FinancialDataTabPanel({
@@ -72,26 +78,36 @@ export function FinancialDataTabPanel({
   headerClassName = 'bg-emerald-600',
   emptyTitle = 'Sin registros',
   emptyDescription = 'No hay registros en esta sección todavía',
+  subtypes,
+  onManageSubtypes,
+  manageSubtypesLabel = 'Subtipos',
 }: FinancialDataTabPanelProps) {
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [subtypeFilter, setSubtypeFilter] = useState<SubtypeFilter>('all');
   const [sort, setSort] = useState<SortOption>('recent');
   const [page, setPage] = useState(1);
 
-  const hasActiveFilters = search.trim() !== '' || sourceFilter !== 'all' || sort !== 'recent';
+  const hasActiveFilters =
+    search.trim() !== '' || sourceFilter !== 'all' || sort !== 'recent' || subtypeFilter !== 'all';
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     let result = items;
     if (query) {
       result = result.filter((item) =>
-        [item.concept, item.sourceDetail, item.reporterName, item.reporterNit]
+        [item.concept, item.sourceDetail, item.reporterName, item.reporterNit, item.subtype?.name]
           .filter(Boolean)
           .some((field) => String(field).toLowerCase().includes(query)),
       );
     }
     if (sourceFilter !== 'all') {
       result = result.filter((item) => normalizeSource(item.source) === sourceFilter);
+    }
+    if (subtypeFilter !== 'all') {
+      result = result.filter((item) =>
+        subtypeFilter === 'none' ? !item.subtype : item.subtype?.id === subtypeFilter,
+      );
     }
     const sorted = [...result];
     switch (sort) {
@@ -117,7 +133,7 @@ export function FinancialDataTabPanel({
         break;
     }
     return sorted;
-  }, [items, search, sourceFilter, sort]);
+  }, [items, search, sourceFilter, subtypeFilter, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
@@ -131,6 +147,7 @@ export function FinancialDataTabPanel({
   const handleClear = () => {
     setSearch('');
     setSourceFilter('all');
+    setSubtypeFilter('all');
     setSort('recent');
     setPage(1);
   };
@@ -146,8 +163,13 @@ export function FinancialDataTabPanel({
               {items.length}
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <span className="text-sm font-bold text-white hidden sm:inline">Total: {totalFormatted}</span>
+            {!readOnly && onManageSubtypes && (
+              <Button onClick={onManageSubtypes} size="sm" variant="ghost" className="text-white hover:bg-white/20 hover:text-white font-bold">
+                <Tags className="mr-1 h-4 w-4" /> {manageSubtypesLabel}
+              </Button>
+            )}
             {!readOnly && onAdd && (
               <Button onClick={onAdd} size="sm" className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold">
                 <Plus className="mr-1 h-4 w-4" /> {addLabel}
@@ -173,6 +195,28 @@ export function FinancialDataTabPanel({
               />
             </div>
             <div className="flex gap-2">
+              {subtypes && subtypes.length > 0 && (
+                <Select
+                  value={subtypeFilter}
+                  onValueChange={(value) => {
+                    setSubtypeFilter(value as SubtypeFilter);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-44 bg-muted/30" aria-label="Filtrar por subtipo">
+                    <SelectValue placeholder="Subtipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Subtipos</SelectItem>
+                    <SelectItem value="none">Sin subtipo</SelectItem>
+                    {subtypes.map((subtype) => (
+                      <SelectItem key={subtype.id} value={subtype.id}>
+                        {subtype.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Select
                 value={sourceFilter}
                 onValueChange={(value) => {

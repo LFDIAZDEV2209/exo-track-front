@@ -15,6 +15,7 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Loader2, Building2, TrendingUp, CreditCard, FileText, DollarSign, Save, Shapes } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
@@ -46,9 +47,12 @@ interface ItemFormDialogProps {
     id: string;
     concept: string;
     amount: number;
+    subtypeId?: string | null;
   } | null;
+  /** Subtipos ofrecidos en el picker (si se omite, no se muestra) */
+  subtypes?: Array<{ id: string; name: string }>;
   createService: (data: any) => Promise<any>;
-  updateService: (id: string, data: { concept?: string; amount?: number }) => Promise<any>;
+  updateService: (id: string, data: { concept?: string; amount?: number; subtypeId?: string | null }) => Promise<any>;
 }
 
 export function ItemFormDialog({
@@ -60,12 +64,15 @@ export function ItemFormDialog({
   extraCreateFields,
   declarationId,
   editingItem,
+  subtypes,
   createService,
   updateService,
 }: ItemFormDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
+  // '' = sin subtipo; se reinicia por ítem vía key del padre o al abrir
+  const [selectedSubtype, setSelectedSubtype] = useState<string>(editingItem?.subtypeId ?? '');
 
   const formValues = useMemo(() => {
     if (editingItem) {
@@ -96,6 +103,7 @@ export function ItemFormDialog({
         await updateService(editingItem.id, {
           concept: data.concept,
           amount: amount,
+          ...(subtypes ? { subtypeId: selectedSubtype || null } : {}),
         });
         toast({
           title: 'Registro actualizado',
@@ -108,6 +116,7 @@ export function ItemFormDialog({
           concept: data.concept,
           amount: amount,
           ...extraCreateFields,
+          ...(subtypes && selectedSubtype ? { subtypeId: selectedSubtype } : {}),
         });
         toast({
           title: 'Registro creado',
@@ -219,6 +228,31 @@ export function ItemFormDialog({
               <p className="text-sm text-destructive">{errors.amount.message}</p>
             )}
           </div>
+
+          {subtypes && subtypes.length > 0 && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '300ms' }}>
+              <Label htmlFor="subtype" className="flex items-center gap-2 font-bold">
+                <Shapes className="h-4 w-4 text-violet-500" />
+                Subtipo
+              </Label>
+              <Select
+                value={selectedSubtype || 'none'}
+                onValueChange={(value) => setSelectedSubtype(value === 'none' ? '' : value)}
+              >
+                <SelectTrigger id="subtype" disabled={isLoading} aria-label="Subtipo del registro">
+                  <SelectValue placeholder="Sin subtipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin subtipo</SelectItem>
+                  {subtypes.map((subtype) => (
+                    <SelectItem key={subtype.id} value={subtype.id}>
+                      {subtype.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <DialogFooter>
             <Button

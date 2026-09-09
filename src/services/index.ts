@@ -3,6 +3,7 @@ export { authService } from './auth.service';
 export { userService } from './user.service';
 export type { UserSortField, SortOrder } from './user.service';
 export { conceptTypeService } from './concept-type.service';
+export { conceptSubtypeService } from './concept-subtype.service';
 export { customItemService } from './custom-item.service';
 export { unclassifiedItemService } from './unclassified-item.service';
 export { declarationService } from './declaration.service';

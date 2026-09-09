@@ -14,6 +14,7 @@ export interface CreateCustomItemRequest {
   conceptTypeId: string;
   concept: string;
   amount: number;
+  subtypeId?: string;
 }
 
 export interface FindAllCustomItemsResponse {
@@ -84,12 +85,13 @@ export const customItemService = {
    */
   async update(
     id: string,
-    data: { concept?: string; amount?: number; conceptTypeId?: string },
+    data: { concept?: string; amount?: number; conceptTypeId?: string; subtypeId?: string | null },
   ): Promise<CustomItem> {
-    const payload: { concept?: string; amount?: number; conceptTypeId?: string } = {};
+    const payload: { concept?: string; amount?: number; conceptTypeId?: string; subtypeId?: string | null } = {};
     if (data.concept !== undefined) payload.concept = data.concept;
     if (data.amount !== undefined) payload.amount = data.amount;
     if (data.conceptTypeId !== undefined) payload.conceptTypeId = data.conceptTypeId;
+    if (data.subtypeId !== undefined) payload.subtypeId = data.subtypeId;
 
     return apiClient.put<CustomItem>(API_ENDPOINTS.customItems.update(id), payload).then(toNumber);
   },

@@ -9,11 +9,12 @@ import {
   liabilityService,
   userService,
   conceptTypeService,
+  conceptSubtypeService,
   customItemService,
   unclassifiedItemService,
 } from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { DeclarationStatus, type ConceptType } from '@/types';
+import { DeclarationStatus, type ConceptSubtype, type ConceptType } from '@/types';
 import type { MoveItemTarget } from '../components/MoveItemDialog';
 
 // Tope de carga completa por colección: las pestañas filtran/ordenan/paginan
@@ -40,6 +41,7 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [unclassifiedItems, setUnclassifiedItems] = useState<any[]>([]);
   const [conceptTypes, setConceptTypes] = useState<ConceptType[]>([]);
+  const [subtypes, setSubtypes] = useState<ConceptSubtype[]>([]);
   // Totales del servidor: si alguna colección supera FULL_LIST_LIMIT,
   // el reporte trae el resto bajo demanda (la vista sigue siendo rápida)
   const [assetsTotal, setAssetsTotal] = useState(0);
@@ -78,9 +80,13 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
   const [deleteUnclassifiedDialogOpen, setDeleteUnclassifiedDialogOpen] = useState(false);
   const [unclassifiedToDelete, setUnclassifiedToDelete] = useState<{ id: string; concept: string } | null>(null);
 
-  // Mover / re-catalogar + gestionar tipos
+  // Mover / re-catalogar + gestionar tipos y subtipos
   const [moveTarget, setMoveTarget] = useState<MoveItemTarget | null>(null);
   const [typesManagerOpen, setTypesManagerOpen] = useState(false);
+  const [subtypesManagerScope, setSubtypesManagerScope] = useState<{
+    scope: 'income' | 'asset' | 'liability' | 'custom';
+    label: string;
+  } | null>(null);
 
   const loadItems = useCallback(async () => {
     const [assetsRes, incomesRes, liabilitiesRes, customRes, unclassifiedRes] = await Promise.all([
@@ -106,6 +112,10 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     setConceptTypes(await conceptTypeService.findAll());
   }, []);
 
+  const loadSubtypes = useCallback(async () => {
+    setSubtypes(await conceptSubtypeService.findAll());
+  }, []);
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -119,7 +129,7 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
         setClient(clientData);
         setObservations(decl?.description || '');
 
-        await Promise.all([loadItems(), loadTypes()]);
+        await Promise.all([loadItems(), loadTypes(), loadSubtypes()]);
       } catch (error) {
         console.error('Error loading declaration:', error);
       } finally {
@@ -128,12 +138,12 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     };
 
     fetchInitialData();
-  }, [declarationId, customerId, loadItems, loadTypes]);
+  }, [declarationId, customerId, loadItems, loadTypes, loadSubtypes]);
 
-  /** Recarga ítems + tipos tras mover/catalogar (afecta dos colecciones). */
+  /** Recarga ítems + tipos + subtipos tras mover/catalogar (afecta dos colecciones). */
   const refreshAfterMove = useCallback(async () => {
-    await Promise.all([loadItems(), loadTypes()]);
-  }, [loadItems, loadTypes]);
+    await Promise.all([loadItems(), loadTypes(), loadSubtypes()]);
+  }, [loadItems, loadTypes, loadSubtypes]);
 
   const handleFinalize = async () => {
     try {
@@ -305,17 +315,44 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
 
   const handleMoveAsset = (id: string) => {
     const asset = assets.find((a) => a.id === id);
-    if (asset) setMoveTarget({ id, concept: asset.concept, amount: asset.amount, kind: 'asset' });
+    if (asset) {
+      setMoveTarget({
+        id,
+        concept: asset.concept,
+        amount: asset.amount,
+        kind: 'asset',
+        subtypeId: asset.subtype?.id,
+        subtypeName: asset.subtype?.name,
+      });
+    }
   };
 
   const handleMoveIncome = (id: string) => {
     const income = incomes.find((i) => i.id === id);
-    if (income) setMoveTarget({ id, concept: income.concept, amount: income.amount, kind: 'income' });
+    if (income) {
+      setMoveTarget({
+        id,
+        concept: income.concept,
+        amount: income.amount,
+        kind: 'income',
+        subtypeId: income.subtype?.id,
+        subtypeName: income.subtype?.name,
+      });
+    }
   };
 
   const handleMoveLiability = (id: string) => {
     const liability = liabilities.find((l) => l.id === id);
-    if (liability) setMoveTarget({ id, concept: liability.concept, amount: liability.amount, kind: 'liability' });
+    if (liability) {
+      setMoveTarget({
+        id,
+        concept: liability.concept,
+        amount: liability.amount,
+        kind: 'liability',
+        subtypeId: liability.subtype?.id,
+        subtypeName: liability.subtype?.name,
+      });
+    }
   };
 
   const handleMoveCustomItem = (id: string) => {
@@ -328,6 +365,8 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
         kind: 'custom',
         customTypeId: item.conceptType?.id,
         customTypeName: item.conceptType?.name,
+        subtypeId: item.subtype?.id,
+        subtypeName: item.subtype?.name,
       });
     }
   };
@@ -347,6 +386,17 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
 
   const customItemsByType = (conceptTypeId: string) =>
     customItems.filter((item) => item.conceptType?.id === conceptTypeId);
+  const subtypesByScope = (
+    scope: 'income' | 'asset' | 'liability' | 'custom',
+    conceptTypeId?: string,
+  ) =>
+    subtypes.filter(
+      (s) =>
+        s.scope === scope &&
+        (scope !== 'custom' || (conceptTypeId ? s.conceptType?.id === conceptTypeId : true)),
+    );
+  const subtypeCountById = (subtypeId: string, list: any[]) =>
+    list.filter((item) => item.subtype?.id === subtypeId).length;
   const customTotalByType = (conceptTypeId: string) =>
     sumAmounts(customItemsByType(conceptTypeId));
   const customCountByType = (conceptTypeId: string) =>
@@ -362,6 +412,9 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     customItems,
     unclassifiedItems,
     conceptTypes,
+    subtypes,
+    subtypesByScope,
+    subtypeCountById,
     assetsTotal,
     incomesTotal,
     liabilitiesTotal,
@@ -421,11 +474,14 @@ export function useAdminDeclaration(declarationId: string, customerId: string) {
     setMoveTarget,
     typesManagerOpen,
     setTypesManagerOpen,
+    subtypesManagerScope,
+    setSubtypesManagerScope,
     handleFinalize,
     handleUpdateObservations,
     handleDeleteDeclaration,
     loadItems,
     loadTypes,
+    loadSubtypes,
     refreshAfterMove,
     handleCreateAsset,
     handleEditAsset,

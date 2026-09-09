@@ -11,10 +11,12 @@ import {
 } from '@/shared/ui/dialog';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
+import { Label } from '@/shared/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { declarationService, type MoveItemFromKind, type MoveItemToKind } from '@/services';
-import type { ConceptType } from '@/types';
+import type { ConceptType, ConceptSubtype } from '@/types';
 import { ArrowRightLeft, Building2, Check, CreditCard, Loader2, Shapes, TrendingUp } from 'lucide-react';
 
 export interface MoveItemTarget {
@@ -25,6 +27,8 @@ export interface MoveItemTarget {
   /** Solo cuando kind === 'custom' */
   customTypeId?: string;
   customTypeName?: string;
+  subtypeId?: string;
+  subtypeName?: string;
 }
 
 interface MoveItemDialogProps {
@@ -33,6 +37,7 @@ interface MoveItemDialogProps {
   declarationId: string;
   item: MoveItemTarget | null;
   conceptTypes: ConceptType[];
+  subtypes: ConceptSubtype[];
   onMoved: () => void;
 }
 
@@ -50,11 +55,13 @@ export function MoveItemDialog({
   declarationId,
   item,
   conceptTypes,
+  subtypes,
   onMoved,
 }: MoveItemDialogProps) {
   const { toast } = useToast();
   // Sin estado inicial que resetear: el padre remonta con key={item.id} por ítem.
   const [destination, setDestination] = useState<{ to: MoveItemToKind; customTypeId?: string } | null>(null);
+  const [selectedSubtype, setSelectedSubtype] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
   if (!item) return null;
@@ -67,11 +74,12 @@ export function MoveItemDialog({
     if (!destination) return;
     try {
       setIsSaving(true);
-      await declarationService.moveItem(declarationId, {
+      const result = await declarationService.moveItem(declarationId, {
         itemId: item.id,
         from: item.kind,
         to: destination.to,
         ...(destination.to === 'custom' ? { customTypeId: destination.customTypeId } : {}),
+        ...(selectedSubtype ? { subtypeId: selectedSubtype } : {}),
       });
       const destLabel =
         destination.to === 'custom'
@@ -79,7 +87,9 @@ export function MoveItemDialog({
           : KIND_LABELS[destination.to];
       toast({
         title: item.kind === 'unclassified' ? 'Concepto catalogado' : 'Registro movido',
-        description: `"${item.concept}" ahora está en ${destLabel}.`,
+        description: `"${item.concept}" ahora está en ${destLabel}.${
+          result.subtypeCleared ? ' Se quitó el subtipo anterior por el cambio de ámbito.' : ''
+        }`,
       });
       onOpenChange(false);
       onMoved();
@@ -95,6 +105,22 @@ export function MoveItemDialog({
 
   const isCurrent = (to: MoveItemToKind, customTypeId?: string) =>
     item.kind === to && (to !== 'custom' || item.customTypeId === customTypeId);
+
+  // Subtipos ofrecidos según el destino elegido (mismo ámbito + tipo)
+  const destScope = destination
+    ? destination.to === 'custom'
+      ? 'custom'
+      : destination.to
+    : null;
+  const destSubtypes = destination
+    ? subtypes.filter(
+        (s) =>
+          s.isActive &&
+          s.scope === destScope &&
+          (destScope !== 'custom' || s.conceptType?.id === destination.customTypeId),
+      )
+    : [];
+  const destSubtypeName = (id: string) => destSubtypes.find((s) => s.id === id)?.name;
 
   const options: Array<{ to: MoveItemToKind; customTypeId?: string; label: string; icon: typeof Building2 }> = [
     { to: 'asset', label: 'Patrimonio', icon: Building2 },
@@ -134,6 +160,11 @@ export function MoveItemDialog({
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span className="shrink-0">{formatCurrency(typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount)}</span>
             <Badge variant="secondary" className="shrink-0 text-[11px]">{currentLabel}</Badge>
+            {item.subtypeName && (
+              <Badge variant="outline" className="shrink-0 border-violet-500/30 bg-violet-500/10 text-[11px] font-semibold text-violet-700 dark:text-violet-400">
+                {item.subtypeName}
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -150,7 +181,10 @@ export function MoveItemDialog({
                 role="radio"
                 aria-checked={selected}
                 disabled={disabled || isSaving}
-                onClick={() => setDestination({ to: option.to, customTypeId: option.customTypeId })}
+                onClick={() => {
+                  setDestination({ to: option.to, customTypeId: option.customTypeId });
+                  setSelectedSubtype('');
+                }}
                 className={`flex min-w-0 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 ${
                   selected
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700'
@@ -173,6 +207,41 @@ export function MoveItemDialog({
             </p>
           )}
         </div>
+
+        {destination && (
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground">
+              Subtipo en destino (opcional)
+            </Label>
+            {destSubtypes.length > 0 ? (
+              <Select
+                value={selectedSubtype || 'keep'}
+                onValueChange={(value) => setSelectedSubtype(value === 'keep' ? '' : value)}
+              >
+                <SelectTrigger aria-label="Subtipo en destino">
+                  <SelectValue placeholder="Conservar / sin subtipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="keep">
+                    {item.subtypeName && destSubtypes.some((s) => s.id === item.subtypeId)
+                      ? `Conservar “${item.subtypeName}”`
+                      : 'Sin subtipo'}
+                  </SelectItem>
+                  {destSubtypes.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Sin subtipos en este destino
+                {item.subtypeName ? ': se quitará el actual.' : '.'}
+              </p>
+            )}
+          </div>
+        )}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
