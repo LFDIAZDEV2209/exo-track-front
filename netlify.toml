@@ -3,7 +3,9 @@
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "20.18.0"
+  # >=22: el Corepack de Node 20 no verifica la firma de pnpm 10 (packageManager)
+  # y tumba el install. No bajar de 22.
+  NODE_VERSION = "22"
   NETLIFY_BUILD_DEBUG = "true"
 
 [[plugins]]
