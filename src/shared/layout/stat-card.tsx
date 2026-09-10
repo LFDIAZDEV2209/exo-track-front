@@ -56,13 +56,16 @@ const variantStyles = {
 };
 
 function AnimatedValue({ value, enabled }: { value: string | number; enabled: boolean }) {
-  const [display, setDisplay] = useState(enabled ? '0' : String(value));
-  const startedRef = useRef<boolean | null>(null);
+  const [display, setDisplay] = useState('0');
+  const startedForRef = useRef<string | number | null>(null);
   const numericValue = typeof value === 'string' ? parseInt(value.replace(/[^0-9]/g, '')) || 0 : value;
 
   useEffect(() => {
-    if (!enabled || startedRef.current) return;
-    startedRef.current = true;
+    if (!enabled) return;
+    // Reinicia si el valor cambió desde la última animación (ej. llegó la data
+    // después del primer render): sin esto el contador queda congelado en 0.
+    if (startedForRef.current === value) return;
+    startedForRef.current = value;
 
     const prefix = typeof value === 'string' ? value.replace(/[0-9]/g, '').match(/^[^0-9]*/)?.[0] || '' : '';
     const target = numericValue as number;
@@ -85,7 +88,7 @@ function AnimatedValue({ value, enabled }: { value: string | number; enabled: bo
     return () => clearInterval(interval);
   }, [value, enabled, numericValue]);
 
-  return <>{display}</>;
+  return <>{enabled ? display : String(value)}</>;
 }
 
 export function StatCard({

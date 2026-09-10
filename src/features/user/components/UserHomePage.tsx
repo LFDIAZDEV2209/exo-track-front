@@ -47,11 +47,17 @@ export function UserHomePage() {
       if (!user?.id) return;
       try {
         setLoading(true);
+        // Carga completa del usuario (son pocas por cliente): los contadores
+        // salen del total real, no de una muestra paginada.
         const response = await declarationService.findAllWithPagination(
-          { limit: 3, offset: 0 },
+          { limit: 100, offset: 0 },
           user.id,
         );
-        setDeclarations(response.declarations);
+        // Recientes primero (año gravable descendente)
+        const sorted = [...(response.declarations ?? [])].sort(
+          (a, b) => (b.taxableYear ?? 0) - (a.taxableYear ?? 0),
+        );
+        setDeclarations(sorted);
       } catch (error) {
         console.error('Error loading declarations:', error);
       } finally {
@@ -67,6 +73,8 @@ export function UserHomePage() {
   const pendingCount = declarations.filter(
     (d) => d.status === DeclarationStatus.PENDING,
   ).length;
+  // La grilla muestra las 6 más recientes; el resto vive en Mis Declaraciones
+  const recentDeclarations = declarations.slice(0, 6);
 
   const userName = user?.fullName?.split(' ')[0] || 'Usuario';
 
@@ -137,7 +145,7 @@ export function UserHomePage() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
-            {declarations.map((declaration) => (
+            {recentDeclarations.map((declaration) => (
               <div
                 key={declaration.id}
                 className="group relative overflow-hidden rounded-xl border bg-card p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
