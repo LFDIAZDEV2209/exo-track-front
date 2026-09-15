@@ -1,4 +1,4 @@
-export type ExogenaCategory = 'income' | 'asset' | 'liability' | 'unclassified';
+export type ExogenaCategory = 'income' | 'asset' | 'liability' | 'unclassified' | 'custom';
 
 export interface ExogenaItem {
   id: string;
@@ -10,6 +10,8 @@ export interface ExogenaItem {
   sourceDetail: string;
   /** Subtipo asignado en revisión (scope según category). Se envía al crear. */
   subtypeId?: string;
+  /** Tipo personalizado destino cuando category es 'custom' (endpoint /concept-types). */
+  conceptTypeId?: string;
 }
 
 export interface ExogenaParseResult {

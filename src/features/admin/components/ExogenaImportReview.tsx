@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Save,
   ArrowLeft,
+  Shapes,
 } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
@@ -19,24 +20,18 @@ import { Input } from '@/shared/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import { SourceDetailView } from '@/shared/components/source-detail-view';
-import type { ExogenaCategory, ExogenaItem } from '@/lib/exogena-parser';
-import type { ConceptSubtype, ItemScope } from '@/types';
+import type { ExogenaItem } from '@/lib/exogena-parser';
+import type { ConceptSubtype, ConceptType, ItemScope } from '@/types';
 
-const CATEGORY_SCOPE: Record<ExogenaCategory, ItemScope | null> = {
-  asset: 'asset',
-  income: 'income',
-  liability: 'liability',
-  unclassified: null,
-};
+interface ReviewSection {
+  key: string;
+  label: string;
+  icon: typeof TrendingUp;
+  badge: string;
+  headerClass: string;
+}
 
-const CATEGORY_OPTIONS: { value: ExogenaCategory; label: string }[] = [
-  { value: 'income', label: 'Ingreso' },
-  { value: 'asset', label: 'Patrimonio' },
-  { value: 'liability', label: 'Deuda' },
-  { value: 'unclassified', label: 'Sin clasificar' },
-];
-
-const SECTIONS: { key: ExogenaCategory; label: string; icon: typeof TrendingUp; badge: string; headerClass: string }[] = [
+const BASE_SECTIONS: ReviewSection[] = [
   {
     key: 'income',
     label: 'Ingresos',
@@ -67,6 +62,42 @@ const SECTIONS: { key: ExogenaCategory; label: string; icon: typeof TrendingUp; 
   },
 ];
 
+const BASE_CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'income', label: 'Ingreso' },
+  { value: 'asset', label: 'Patrimonio' },
+  { value: 'liability', label: 'Deuda' },
+  { value: 'unclassified', label: 'Sin clasificar' },
+];
+
+const customValue = (typeId: string): string => `custom:${typeId}`;
+
+function parseCategoryValue(value: string): { category: ExogenaItem['category']; conceptTypeId?: string } {
+  if (value.startsWith('custom:')) {
+    return { category: 'custom', conceptTypeId: value.slice('custom:'.length) || undefined };
+  }
+  return { category: value as ExogenaItem['category'] };
+}
+
+function itemValue(item: ExogenaItem): string {
+  if (item.category === 'custom' && item.conceptTypeId) return customValue(item.conceptTypeId);
+  if (item.category === 'custom') return 'unclassified';
+  return item.category;
+}
+
+function sectionKeyFor(item: ExogenaItem, activeIds: Set<string>): string {
+  if (item.category === 'custom' && item.conceptTypeId && activeIds.has(item.conceptTypeId)) {
+    return customValue(item.conceptTypeId);
+  }
+  if (item.category === 'custom') return 'unclassified';
+  return item.category;
+}
+
+const CATEGORY_SCOPE: Record<'asset' | 'income' | 'liability', ItemScope> = {
+  asset: 'asset',
+  income: 'income',
+  liability: 'liability',
+};
+
 interface ExogenaImportReviewProps {
   fileName: string;
   fileDocumentNumber: string | null;
@@ -79,6 +110,8 @@ interface ExogenaImportReviewProps {
   isSubmitting: boolean;
   /** Subtipos activos para asignar por fila (una sola carga del padre) */
   subtypes?: ConceptSubtype[];
+  /** Tipos personalizados activos (endpoint /concept-types). Llegan a todas las declaraciones. */
+  conceptTypes?: ConceptType[];
 }
 
 export function ExogenaImportReview({
@@ -92,22 +125,63 @@ export function ExogenaImportReview({
   onConfirm,
   isSubmitting,
   subtypes = [],
+  conceptTypes = [],
 }: ExogenaImportReviewProps) {
-  const { byCategory, totalIncluded, totalAmount } = useMemo(() => {
-    const byCategory = new Map<ExogenaCategory, ExogenaItem[]>();
-    for (const section of SECTIONS) byCategory.set(section.key, []);
+  const activeConceptTypes = useMemo(
+    () =>
+      [...conceptTypes]
+        .filter((type) => type.isActive)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [conceptTypes],
+  );
+  const activeIds = useMemo(() => new Set(activeConceptTypes.map((type) => type.id)), [activeConceptTypes]);
+
+  const allSections: ReviewSection[] = useMemo(
+    () => [
+      ...BASE_SECTIONS,
+      ...activeConceptTypes.map((type) => ({
+        key: customValue(type.id),
+        label: type.name,
+        icon: Shapes,
+        badge: 'bg-violet-100 text-violet-700',
+        headerClass: 'border-t-violet-600',
+      })),
+    ],
+    [activeConceptTypes],
+  );
+
+  const categoryOptions = useMemo(
+    () => [
+      ...BASE_CATEGORY_OPTIONS,
+      ...activeConceptTypes.map((type) => ({ value: customValue(type.id), label: type.name })),
+    ],
+    [activeConceptTypes],
+  );
+
+  const { bySection, totalIncluded, totalAmount, customCount } = useMemo(() => {
+    const bySection = new Map<string, ExogenaItem[]>();
+    for (const section of allSections) bySection.set(section.key, []);
 
     let totalIncluded = 0;
     let totalAmount = 0;
+    let customCount = 0;
     for (const item of items) {
-      byCategory.get(item.category)?.push(item);
+      const key = sectionKeyFor(item, activeIds);
+      bySection.get(key)?.push(item);
       if (item.category !== 'unclassified') {
         totalIncluded += 1;
         totalAmount += item.amount;
+        if (item.category === 'custom') customCount += 1;
       }
     }
-    return { byCategory, totalIncluded, totalAmount };
-  }, [items]);
+    return { bySection, totalIncluded, totalAmount, customCount };
+  }, [items, allSections, activeIds]);
+
+  // Insignias: base siempre + solo los tipos custom con registros (evita ruido con muchos tipos).
+  const badgeSections = useMemo(
+    () => allSections.filter((section) => !section.key.startsWith('custom:') || (bySection.get(section.key)?.length ?? 0) > 0),
+    [allSections, bySection],
+  );
 
   const [focusedAmountId, setFocusedAmountId] = useState<string | null>(null);
 
@@ -116,16 +190,28 @@ export function ExogenaImportReview({
   };
 
   // Al cambiar de categoría, el subtipo anterior (de otro ámbito) se descarta
-  const updateCategory = (id: string, category: ExogenaCategory) => {
+  const updateCategoryValue = (id: string, value: string) => {
+    const { category, conceptTypeId } = parseCategoryValue(value);
     onItemsChange(
       items.map((item) =>
-        item.id === id ? { ...item, category, subtypeId: undefined } : item,
+        item.id === id
+          ? {
+              ...item,
+              category,
+              conceptTypeId: category === 'custom' ? conceptTypeId : undefined,
+              subtypeId: undefined,
+            }
+          : item,
       ),
     );
   };
 
-  const subtypesFor = (category: ExogenaCategory): ConceptSubtype[] => {
-    const scope = CATEGORY_SCOPE[category];
+  const subtypesFor = (item: ExogenaItem): ConceptSubtype[] => {
+    if (item.category === 'custom') {
+      if (!item.conceptTypeId) return [];
+      return subtypes.filter((s) => s.scope === 'custom' && s.conceptType?.id === item.conceptTypeId);
+    }
+    const scope = CATEGORY_SCOPE[item.category as keyof typeof CATEGORY_SCOPE];
     if (!scope) return [];
     return subtypes.filter((s) => s.scope === scope);
   };
@@ -173,7 +259,9 @@ export function ExogenaImportReview({
           </div>
           <div className="space-y-1">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Registros a incluir</p>
-            <p className="font-medium text-sm text-emerald-600 font-bold">{totalIncluded} ítems</p>
+            <p className="font-medium text-sm text-emerald-600 font-bold">
+              {totalIncluded} ítems{customCount > 0 ? ` (${customCount} personalizados)` : ''}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -193,14 +281,15 @@ export function ExogenaImportReview({
         <CheckCircle2 className="h-5 w-5 shrink-0" />
         <p>
           Edita el <strong>concepto</strong>, el <strong>valor</strong>, la <strong>categoría</strong> y
-          el <strong>subtipo</strong> de cada registro si es necesario. Lo sin clasificar se guarda
-          en la pestaña “Sin catalogar” para revisarlo después.
+          el <strong>subtipo</strong> de cada registro si es necesario. Puedes clasificar directo a
+          tus tipos personalizados{activeConceptTypes.length > 0 ? ` (${activeConceptTypes.map((t) => t.name).slice(0, 3).join(', ')}${activeConceptTypes.length > 3 ? ', …' : ''})` : ''} además de
+          Ingresos, Patrimonio y Deudas. Lo sin clasificar se guarda en la pestaña “Sin catalogar” para revisarlo después.
         </p>
       </div>
 
       <div className="flex flex-wrap gap-3">
-        {SECTIONS.map((section) => {
-          const sectionItems = byCategory.get(section.key) ?? [];
+        {badgeSections.map((section) => {
+          const sectionItems = bySection.get(section.key) ?? [];
           const total = sectionItems.reduce((sum, item) => sum + item.amount, 0);
           const Icon = section.icon;
           return (
@@ -219,8 +308,8 @@ export function ExogenaImportReview({
       </div>
 
       <div className="space-y-6">
-        {SECTIONS.map((section) => {
-          const sectionItems = byCategory.get(section.key) ?? [];
+        {allSections.map((section) => {
+          const sectionItems = bySection.get(section.key) ?? [];
           if (sectionItems.length === 0) return null;
           const Icon = section.icon;
           const sectionTotal = sectionItems.reduce((sum, item) => sum + item.amount, 0);
@@ -254,7 +343,7 @@ export function ExogenaImportReview({
                       {item.sourceDetail && (
                         <SourceDetailView value={item.sourceDetail} compact />
                       )}
-                      {subtypesFor(item.category).length > 0 && (
+                      {subtypesFor(item).length > 0 && (
                         <Select
                           value={item.subtypeId ?? 'none'}
                           onValueChange={(value) =>
@@ -269,7 +358,7 @@ export function ExogenaImportReview({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Sin subtipo</SelectItem>
-                            {subtypesFor(item.category).map((subtype) => (
+                            {subtypesFor(item).map((subtype) => (
                               <SelectItem key={subtype.id} value={subtype.id}>
                                 {subtype.name}
                               </SelectItem>
@@ -298,14 +387,14 @@ export function ExogenaImportReview({
                       aria-label="Valor"
                     />
                     <Select
-                      value={item.category}
-                      onValueChange={(value) => updateCategory(item.id, value as ExogenaCategory)}
+                      value={itemValue(item)}
+                      onValueChange={(value) => updateCategoryValue(item.id, value)}
                     >
                       <SelectTrigger aria-label="Categoría">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {CATEGORY_OPTIONS.map((option) => (
+                        {categoryOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>

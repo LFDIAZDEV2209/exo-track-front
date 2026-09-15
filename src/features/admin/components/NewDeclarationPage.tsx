@@ -8,9 +8,9 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { declarationSchema, type DeclarationFormData } from '@/lib/validations';
-import { declarationService, userService, conceptSubtypeService } from '@/services';
+import { declarationService, userService, conceptSubtypeService, conceptTypeService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { DeclarationStatus, type ConceptSubtype } from '@/types';
+import { DeclarationStatus, type ConceptSubtype, type ConceptType } from '@/types';
 import { Loader2, ArrowLeft, FilePlus, Info, Calendar, Upload, FileUp, XCircle, FileSpreadsheet } from 'lucide-react';
 import { FileUpload } from '@/shared/layout/file-upload';
 import { ExogenaImportReview } from './ExogenaImportReview';
@@ -40,18 +40,22 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
   const [isReviewing, setIsReviewing] = useState(false);
   // Subtipos activos para asignar durante la revisión (una sola carga)
   const [subtypes, setSubtypes] = useState<ConceptSubtype[]>([]);
+  // Tipos personalizados activos (/concept-types): llegan a todas las declaraciones y a la revisión
+  const [conceptTypes, setConceptTypes] = useState<ConceptType[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientData, taxableYears, activeSubtypes] = await Promise.all([
+        const [clientData, taxableYears, activeSubtypes, allConceptTypes] = await Promise.all([
           userService.findOne(customerId),
           declarationService.getTaxableYearsByUser(customerId),
           conceptSubtypeService.findAll({ isActive: true }),
+          conceptTypeService.findAll(),
         ]);
         setClient(clientData);
         setExistingYears(taxableYears);
         setSubtypes(activeSubtypes);
+        setConceptTypes(allConceptTypes.filter((type) => type.isActive));
       } catch (error) {
         console.error('Error loading data:', error);
       }
@@ -260,11 +264,27 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
         reporterName: item.reporterName?.trim() || undefined,
         reporterNit: item.reporterNit?.trim() || undefined,
       }));
+    // Clasificación directa a tipos personalizados (ej. Retefuente): va a custom_items
+    // en la misma transacción. El reportante se pliega a sourceDetail en el backend.
+    const custom = reviewItems
+      .filter(
+        (item) =>
+          item.category === 'custom' &&
+          item.conceptTypeId &&
+          item.concept.trim() &&
+          item.amount > 0,
+      )
+      .map((item) => ({
+        ...sanitize(item),
+        conceptTypeId: item.conceptTypeId as string,
+        reporterName: item.reporterName?.trim() || undefined,
+        reporterNit: item.reporterNit?.trim() || undefined,
+      }));
 
-    if (assets.length + incomes.length + liabilities.length + unclassified.length === 0) {
+    if (assets.length + incomes.length + liabilities.length + unclassified.length + custom.length === 0) {
       toast({
         title: 'No hay registros válidos',
-        description: 'Clasifica al menos un registro en Ingresos, Patrimonio o Deudas para crear la declaración.',
+        description: 'Clasifica al menos un registro en Ingresos, Patrimonio, Deudas o un tipo personalizado para crear la declaración.',
         variant: 'destructive',
       });
       return;
@@ -280,15 +300,18 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
         incomes,
         liabilities,
         unclassified,
+        custom,
       });
 
       const unclassifiedMsg =
         response.counts.unclassified > 0
           ? ` Quedaron ${response.counts.unclassified} sin catalogar para revisar.`
           : '';
+      const customCount = response.counts.custom ?? 0;
+      const customMsg = customCount > 0 ? ` ${customCount} en tipos personalizados.` : '';
       toast({
         title: 'Declaración creada desde exógena',
-        description: `Se importaron ${response.counts.assets} patrimonios, ${response.counts.incomes} ingresos y ${response.counts.liabilities} deudas.${unclassifiedMsg}`,
+        description: `Se importaron ${response.counts.assets} patrimonios, ${response.counts.incomes} ingresos y ${response.counts.liabilities} deudas.${customMsg}${unclassifiedMsg}`,
       });
 
       router.push(`/admin/customers/${customerId}/declarations/${response.declaration.id}`);
@@ -320,6 +343,7 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
         onConfirm={handleConfirmImport}
         isSubmitting={isLoading}
         subtypes={subtypes}
+        conceptTypes={conceptTypes}
       />
     );
   }
@@ -417,6 +441,12 @@ export function NewDeclarationPage({ customerId }: NewDeclarationPageProps) {
                     {parsedFile.items.filter((i) => i.category === 'asset').length} patrimonios,{' '}
                     {parsedFile.items.filter((i) => i.category === 'liability').length} deudas,{' '}
                     {parsedFile.items.filter((i) => i.category === 'unclassified').length} sin clasificar
+                    {reviewItems.some((i) => i.category === 'custom')
+                      ? `, ${reviewItems.filter((i) => i.category === 'custom').length} personalizados`
+                      : ''}
+                    {conceptTypes.length > 0
+                      ? ` · ${conceptTypes.length} tipo${conceptTypes.length === 1 ? '' : 's'} personalizado${conceptTypes.length === 1 ? '' : 's'} disponible${conceptTypes.length === 1 ? '' : 's'}`
+                      : ''}
                   </p>
                 </div>
               )}

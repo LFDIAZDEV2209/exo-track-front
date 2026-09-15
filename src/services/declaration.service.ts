@@ -25,6 +25,10 @@ export interface ExogenaItemRequest {
   subtypeId?: string;
 }
 
+export interface ExogenaCustomItemRequest extends ExogenaItemRequest {
+  conceptTypeId: string;
+}
+
 export interface CreateFromExogenaRequest {
   userId: string;
   taxableYear: number;
@@ -33,6 +37,7 @@ export interface CreateFromExogenaRequest {
   incomes?: ExogenaItemRequest[];
   liabilities?: ExogenaItemRequest[];
   unclassified?: ExogenaItemRequest[];
+  custom?: ExogenaCustomItemRequest[];
 }
 
 export type MoveItemFromKind = 'asset' | 'income' | 'liability' | 'custom' | 'unclassified';
@@ -155,7 +160,7 @@ export const declarationService = {
    */
   async createFromExogena(data: CreateFromExogenaRequest): Promise<{
     declaration: Declaration;
-    counts: { assets: number; incomes: number; liabilities: number; unclassified: number };
+    counts: { assets: number; incomes: number; liabilities: number; unclassified: number; custom?: number };
   }> {
     return apiClient.post(API_ENDPOINTS.declarations.importExogena, data);
   },
