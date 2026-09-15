@@ -13,7 +13,7 @@ export { liabilityService } from './liability.service';
 
 // Export types
 export type { LoginRequest, LoginResponse } from './auth.service';
-export type { CreateDeclarationRequest, UpdateDeclarationRequest, CreateFromExogenaRequest, ExogenaItemRequest, MoveItemRequest, MoveItemResponse, MoveItemFromKind, MoveItemToKind } from './declaration.service';
+export type { CreateDeclarationRequest, UpdateDeclarationRequest, CreateFromExogenaRequest, ExogenaItemRequest, ExogenaCustomItemRequest, MoveItemRequest, MoveItemResponse, MoveItemFromKind, MoveItemToKind } from './declaration.service';
 export type { CreateIncomeRequest } from './income.service';
 export type { CreateAssetRequest } from './asset.service';
 export type { CreateLiabilityRequest } from './liability.service';
