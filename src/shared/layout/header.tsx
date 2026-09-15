@@ -18,9 +18,18 @@ import { useRouter } from 'next/navigation';
 
 export function Header() {
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
+  const toggleSidebarCollapsed = useUIStore((state) => state.toggleSidebarCollapsed);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const router = useRouter();
+
+  const handleMenuClick = () => {
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+      toggleSidebarCollapsed();
+    } else {
+      toggleSidebar();
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -40,8 +49,10 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={toggleSidebar}
-          className="lg:hidden transition-all duration-200 hover:bg-accent/50"
+          onClick={handleMenuClick}
+          aria-label="Alternar menú lateral"
+          title="Alternar menú lateral"
+          className="transition-all duration-200 hover:bg-accent/50"
         >
           <Menu className="h-5 w-5" />
         </Button>

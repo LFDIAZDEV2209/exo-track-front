@@ -56,10 +56,11 @@ export function LoginPage() {
   const [bgDots, setBgDots] = useState<BgDot[]>([]);
 
   useEffect(() => {
-    setBgDots(generateBgDots());
+    const frame = requestAnimationFrame(() => setBgDots(generateBgDots()));
+    return () => cancelAnimationFrame(frame);
   }, []);
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+    <div className="relative min-h-screen flex overflow-hidden">
       <div className="absolute inset-0 bg-grid pointer-events-none" />
 
       <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-gradient-to-br from-emerald-500/12 to-transparent rounded-full blur-3xl animate-float-slow" />
@@ -87,7 +88,8 @@ export function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <div className="relative w-full max-w-md animate-scale-in">
+      <div className="relative flex w-full items-center justify-center p-4 sm:p-8 lg:w-1/2">
+        <div className="w-full max-w-md animate-scale-in">
         <div className="rounded-2xl border border-emerald-500/10 bg-card/80 backdrop-blur-xl shadow-xl shadow-emerald-500/5 p-8">
           <div className="flex flex-col items-center mb-8">
             <div className="relative mb-4 flex h-16 w-16 items-center justify-center">
@@ -112,15 +114,51 @@ export function LoginPage() {
           <LoginForm />
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          &copy; 2026 ExoTrack. Todos los derechos reservados.
-        </p>
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            &copy; 2026 ExoTrack. Todos los derechos reservados.
+          </p>
+        </div>
+      </div>
+
+      <div className="relative hidden w-1/2 animate-fade-in-right lg:block">
+        <Image
+          src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop"
+          alt="Fachada corporativa de vidrio, gestión contable profesional"
+          fill
+          sizes="50vw"
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-emerald-950/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-10">
+          <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-100 backdrop-blur-md">
+            <ShieldCheck className="h-3.5 w-3.5" /> DIAN · Información exógena
+          </p>
+          <p className="max-w-md text-2xl font-bold leading-tight tracking-tight text-white">
+            Tus declaraciones de renta, organizadas sin perder ningún concepto.
+          </p>
+          <ul className="mt-5 space-y-2.5 text-sm text-emerald-50/90">
+            <li className="flex items-center gap-2.5">
+              <FileCheck className="h-4 w-4 shrink-0 text-emerald-300" /> Importación del Excel DIAN en un clic
+            </li>
+            <li className="flex items-center gap-2.5">
+              <CheckCircle className="h-4 w-4 shrink-0 text-emerald-300" /> Nada se pierde: lo no catalogado queda pendiente
+            </li>
+            <li className="flex items-center gap-2.5">
+              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-300" /> Reportes listos para contador y cliente
+            </li>
+          </ul>
+          <p className="mt-6 text-[11px] text-white/50">
+            Foto: Unsplash
+          </p>
+        </div>
       </div>
 
       {floatingIcons.map(({ Icon, className, size, delay, duration, boxSize }) => (
         <div
           key={className}
-          className={`absolute ${className} pointer-events-none animate-float`}
+          className={`absolute ${className} pointer-events-none animate-float lg:hidden`}
           style={{ animationDelay: `${delay}s`, animationDuration: `${duration}s` }}
         >
           <div

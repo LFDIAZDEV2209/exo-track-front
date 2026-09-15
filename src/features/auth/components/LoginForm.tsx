@@ -54,7 +54,7 @@ export function LoginForm() {
           />
         </div>
         {errors.cedula && (
-          <p className="text-xs text-destructive animate-fade-in-up">
+          <p role="alert" className="text-xs text-destructive animate-fade-in-up">
             {errors.cedula.message}
           </p>
         )}
@@ -89,7 +89,7 @@ export function LoginForm() {
           </button>
         </div>
         {errors.password && (
-          <p className="text-xs text-destructive animate-fade-in-up">
+          <p role="alert" className="text-xs text-destructive animate-fade-in-up">
             {errors.password.message}
           </p>
         )}
@@ -99,6 +99,7 @@ export function LoginForm() {
         type="submit"
         className="w-full h-11 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30"
         disabled={isPending}
+        aria-busy={isPending}
       >
         {isPending ? (
           <>

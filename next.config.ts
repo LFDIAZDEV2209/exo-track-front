@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
   async rewrites() {
     return [
       {
@@ -16,3 +24,5 @@ const nextConfig: NextConfig = {
     ];
   },
 };
+
+export default nextConfig;
